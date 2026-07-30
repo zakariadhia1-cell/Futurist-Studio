@@ -8,7 +8,7 @@ Ein persönliches KI-Betriebssystem: ein Executive Agent koordiniert sechs Facha
 und Terminal. Architektur, DB-Schema, API-Design und Entwicklungsplan stehen in
 [`docs/architecture/FUTURIST_OS_ARCHITECTURE.md`](docs/architecture/FUTURIST_OS_ARCHITECTURE.md).
 
-**Phase 0-9 (Fundament, Core Chat, Wissensdatenbank, Multi-Agent-Orchestrierung, Browser-/Terminalsteuerung, alle 7 Fachagenten, Vision/OCR/Sprache, Dateien/Notizen, Plugin-System via MCP, Sicherheit & Haertung) sind implementiert:**
+**Phase 0-10 (Fundament, Core Chat, Wissensdatenbank, Multi-Agent-Orchestrierung, Browser-/Terminalsteuerung, alle 7 Fachagenten, Vision/OCR/Sprache, Dateien/Notizen, Plugin-System via MCP, Sicherheit & Haertung, Politur & Launch-Doku) sind implementiert - das komplette 11-Phasen-Projekt aus der Architektur bis auf Kalender/E-Mail (siehe unten):**
 
 | Ordner | Inhalt |
 |---|---|
@@ -21,7 +21,8 @@ Google-OAuth-Client-Credentials, die nur der Nutzer selbst in der Google Cloud C
 anlegen kann - siehe [`apps/api/README.md`](apps/api/README.md#kalender--e-mail-phase-7---offen).
 
 Setup: [`apps/api/README.md`](apps/api/README.md), [`apps/web/README.md`](apps/web/README.md),
-[`infra/README.md`](infra/README.md).
+[`infra/README.md`](infra/README.md). Produktivbetrieb:
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), [`docs/GO_LIVE_CHECKLIST.md`](docs/GO_LIVE_CHECKLIST.md).
 
 ## Jarvis
 

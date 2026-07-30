@@ -24,7 +24,7 @@ export function DashboardPage() {
     <>
       <PageHeader
         title={`Willkommen zurueck, ${user?.full_name ?? ''}`}
-        subtitle="FUTURIST OS - Phase 0: Fundament"
+        subtitle="FUTURIST OS - Executive Agent + 6 Fachagenten einsatzbereit"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -48,10 +48,14 @@ export function DashboardPage() {
       </div>
 
       <Card className="mt-4">
-        <div className="font-mono text-[11px] uppercase tracking-wider text-text-low">Naechste Phase</div>
+        <div className="font-mono text-[11px] uppercase tracking-wider text-text-low">Einstieg</div>
         <p className="mt-2 text-sm text-text-mid">
-          Phase 1 - Core Chat: Model-Abstraction (OpenAI/Anthropic/Ollama), Executive Agent, Chat-UI mit
-          WebSocket-Streaming. Siehe{' '}
+          Im <strong className="text-text-hi">Chat</strong> mit dem Executive Agent sprechen - er delegiert an
+          Developer, Design, Marketing, Research, Finance und Automation. Wissen dauerhaft in der{' '}
+          <strong className="text-text-hi">Wissensdatenbank</strong> ablegen, Vorhaben unter{' '}
+          <strong className="text-text-hi">Projekte</strong>/<strong className="text-text-hi">Aufgaben</strong>{' '}
+          verwalten, und in <strong className="text-text-hi">Einstellungen</strong> eigene MCP-Server als
+          Erweiterungen anbinden. Architektur und Entwicklungsstand:{' '}
           <code className="rounded bg-panel-2 px-1 py-0.5 text-text-hi">
             docs/architecture/FUTURIST_OS_ARCHITECTURE.md
           </code>

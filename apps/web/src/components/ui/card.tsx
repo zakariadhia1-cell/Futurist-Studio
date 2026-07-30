@@ -4,7 +4,10 @@ import { clsx } from '@/lib/clsx'
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={clsx('rounded-xl border border-border bg-panel p-5 shadow-lg shadow-black/20', className)}
+      className={clsx(
+        'rounded-xl border border-border bg-panel p-5 shadow-lg shadow-black/20 transition-colors duration-150',
+        className,
+      )}
       {...props}
     />
   )

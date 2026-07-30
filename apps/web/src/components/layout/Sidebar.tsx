@@ -45,7 +45,7 @@ export function Sidebar() {
           FUTURIST<span className="text-accent">·</span>OS
         </div>
         <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-text-low">
-          Phase 0
+          Phase 0-9
         </div>
       </div>
 
