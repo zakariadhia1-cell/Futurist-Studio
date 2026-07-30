@@ -16,7 +16,11 @@ vollstaendigen Deployment-Ablauf.
       `OPENAI_API_KEY`) - ohne beide funktioniert nur ein lokal erreichbares
       Ollama-Modell, ohne Tool-Calling/Vision
 - [ ] Optionale Keys nach Bedarf: `ELEVENLABS_API_KEY` (Sprachausgabe),
-      `N8N_API_KEY`/`N8N_BASE_URL` (Automation Agent), `SENTRY_DSN` (Fehler-Tracking)
+      `N8N_API_KEY`/`N8N_BASE_URL` (Automation Agent), `SENTRY_DSN` (Fehler-Tracking),
+      `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI` (Kalender/E-Mail,
+      Anleitung in `DEPLOYMENT.md` Abschnitt 2a) - bei Domainwechsel `GOOGLE_REDIRECT_URI`
+      *und* die "Autorisierte Weiterleitungs-URI" in der Google Cloud Console gemeinsam
+      aktualisieren, beide muessen exakt uebereinstimmen
 
 ## Infrastruktur
 

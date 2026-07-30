@@ -1,6 +1,7 @@
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/card'
 import { useAuthStore } from '@/store/auth-store'
+import { GoogleAccountPanel } from './GoogleAccountPanel'
 import { McpServersPanel } from './McpServersPanel'
 
 export function SettingsPage() {
@@ -33,6 +34,7 @@ export function SettingsPage() {
           Phase 1 (Model-Abstraction).
         </p>
       </Card>
+      <GoogleAccountPanel />
       <McpServersPanel />
     </>
   )

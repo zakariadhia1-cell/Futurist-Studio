@@ -4,6 +4,7 @@ from app.models.conversation import Conversation
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.file import File
+from app.models.google_account import GoogleAccount
 from app.models.mcp_server import McpServer
 from app.models.memory_fact import MemoryFact
 from app.models.message import Message
@@ -32,4 +33,5 @@ __all__ = [
     "File",
     "Note",
     "McpServer",
+    "GoogleAccount",
 ]

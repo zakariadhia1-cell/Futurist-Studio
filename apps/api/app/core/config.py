@@ -69,6 +69,14 @@ class Settings(BaseSettings):
     FILES_DIR: str = os.path.join(_API_ROOT, "storage", "files")
     MAX_FILE_SIZE_BYTES: int = 25 * 1024 * 1024
 
+    # --- Google OAuth: Calendar/E-Mail (Phase 7) ---
+    # Genuinely optional - unset, the /integrations/google endpoints and Calendar/Gmail
+    # tools just report "not configured" instead of failing. Redirect URI must exactly
+    # match what's registered in the Google Cloud Console OAuth client.
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
+
     # --- Observability (Phase 9) ---
     # Genuinely optional: unset, the app just logs structured JSON to stdout.
     SENTRY_DSN: str = ""

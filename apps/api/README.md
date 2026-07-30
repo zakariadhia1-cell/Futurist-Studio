@@ -141,15 +141,29 @@ nur als Metadatenfeld `filename` fuer die Anzeige/den Download gespeichert).
 Freitext-Notizen (Titel + Inhalt). To-Dos sind bewusst nicht als eigene Entitaet
 angelegt - das bestehende Tasks-System (Phase 3) deckt das bereits ab.
 
-### Kalender & E-Mail (Phase 7 - offen)
+### Kalender & E-Mail (Phase 7)
 
-Bewusst nicht implementiert: beides braucht eine Google-OAuth-Client-ID/-Secret (oder
-einen vergleichbaren Provider), die nur der Nutzer selbst in der jeweiligen Cloud-Console
-anlegen kann - dafuer gibt es keinen sinnvollen serverseitigen Default. Sobald Credentials
-vorliegen, ist die Erweiterung ueberschaubar: ein `CalendarEvent`/`Email`-Modell (siehe
-Architektur-Dokument, Abschnitt 3.1), ein OAuth-Callback-Endpunkt, und Tools
-(`list_events`/`create_event`/`send_email`) fuer den Executive Agent nach demselben Muster
-wie die bestehenden Tools in `app/orchestrator/tools/`.
+Google OAuth (Calendar + Gmail Scopes), aktiviert sobald `GOOGLE_CLIENT_ID`/
+`GOOGLE_CLIENT_SECRET` gesetzt sind (siehe `.env.example`) - Anleitung zum Anlegen der
+Credentials in der Google Cloud Console: [`docs/DEPLOYMENT.md`](../../docs/DEPLOYMENT.md).
+
+REST (nur Verbindungsverwaltung, kein Datenzugriff): `GET /api/v1/auth/google/status`,
+`GET /api/v1/auth/google/connect` (liefert die Google-Consent-URL), `GET
+/api/v1/auth/google/callback` (Redirect-Ziel - muss exakt als "Autorisierte
+Weiterleitungs-URI" in der Google Cloud Console registriert sein), `DELETE
+/api/v1/auth/google`. Der eigentliche Kalender-/E-Mail-Zugriff laeuft ausschliesslich
+ueber Executive-Agent-Tools (`list_calendar_events`, `create_calendar_event`,
+`list_recent_emails`, `send_email` in `app/orchestrator/tools/calendar_email.py`), nicht
+ueber eigene REST-Endpunkte.
+
+Architekturentscheidung: kein lokaler `calendar_events`/`emails`-Sync/Cache (wie im
+Architektur-Dokument, Abschnitt 3.1, skizziert) - jeder Tool-Aufruf geht live gegen die
+Google-APIs (`app/integrations/google_client.py`). Einfacher, immer aktuell, und fuer die
+Aufrufhaeufigkeit eines persoenlichen Assistenten voellig ausreichend; eine echte
+Sync-Engine mit Konflikt-Handling waere unnoetiger Aufwand.
+
+Tokens (Access + Refresh) werden pro Nutzer verschluesselt gespeichert (`ENCRYPTION_KEY`,
+siehe "Sicherheit & Haertung" unten) - `app/models/google_account.py`.
 
 ## Plugin-System & MCP (Phase 8)
 

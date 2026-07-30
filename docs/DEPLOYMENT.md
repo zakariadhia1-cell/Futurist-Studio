@@ -30,6 +30,29 @@ Liste):
 - `ANTHROPIC_API_KEY` und/oder `OPENAI_API_KEY`
 - `ENV=production`, `DEBUG=false`
 - `CORS_ORIGINS` - exakt die eigene Domain, z.B. `["https://futuristos.example.com"]`
+- Optional `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI` fuer Kalender/
+  E-Mail (siehe Abschnitt 2a)
+
+### 2a. Google-OAuth-Credentials fuer Kalender/E-Mail (optional)
+
+1. [console.cloud.google.com](https://console.cloud.google.com) - neues Projekt anlegen.
+2. **APIs & Dienste > Bibliothek**: **Google Calendar API** und **Gmail API** aktivieren.
+3. **APIs & Dienste > OAuth-Zustimmungsbildschirm**: Nutzertyp "Extern", App-Name/
+   Support-E-Mail ausfuellen, Scopes `calendar`, `gmail.readonly`, `gmail.send`
+   hinzufuegen. Bei "Testnutzer" die eigene E-Mail eintragen - fuer rein persoenlichen
+   Gebrauch muss die App nie veroeffentlicht werden.
+4. **APIs & Dienste > Anmeldedaten > + Anmeldedaten erstellen > OAuth-Client-ID**,
+   Anwendungstyp "Webanwendung".
+   - **Autorisierte Weiterleitungs-URIs**: exakt der Wert von `GOOGLE_REDIRECT_URI`
+     (Standard lokal: `http://localhost:8000/api/v1/auth/google/callback`; produktiv:
+     `https://<domain>/api/v1/auth/google/callback`) - muss auf's Zeichen genau
+     uebereinstimmen, sonst schlaegt der Flow mit `redirect_uri_mismatch` fehl.
+   - **Autorisierte JavaScript-Quellen**: nicht erforderlich (der Flow laeuft komplett
+     serverseitig, das Frontend leitet nur per `window.location.href` weiter), kann leer
+     bleiben.
+5. Client-ID und Client-Secret in `apps/api/.env` als `GOOGLE_CLIENT_ID`/
+   `GOOGLE_CLIENT_SECRET` eintragen. Verbindung danach in FUTURIST OS unter
+   **Einstellungen > Google-Konto**.
 
 ## 3. Start
 

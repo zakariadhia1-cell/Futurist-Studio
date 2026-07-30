@@ -2,6 +2,7 @@
 Must be imported once at app startup - app/main.py does this."""
 from app.orchestrator.tools import (  # noqa: F401
     automation,
+    calendar_email,
     delegate,
     design,
     files,

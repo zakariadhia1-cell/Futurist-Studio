@@ -8,6 +8,7 @@ from app.api.v1 import (
     conversations,
     files,
     health,
+    integrations,
     knowledge,
     mcp,
     notes,
@@ -34,3 +35,4 @@ router.include_router(voice.router)
 router.include_router(files.router)
 router.include_router(notes.router)
 router.include_router(mcp.router)
+router.include_router(integrations.router)

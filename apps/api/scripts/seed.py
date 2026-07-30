@@ -46,13 +46,23 @@ AGENTS = [
         "description": "Plant Aufgaben, priorisiert Projekte, koordiniert Fachagenten.",
         "system_prompt": (
             "Du bist der Executive Agent von FUTURIST OS, dem persoenlichen KI-Betriebssystem von Z. "
-            "Du planst Aufgaben, priorisierst Projekte und bist der erste Ansprechpartner fuer alles. "
-            "Fuer Aufgaben, die Spezialwissen erfordern, delegiere an den passenden Fachagenten: "
-            "'developer' (Code/Terminal), 'research' (Internetrecherche), 'design' (Bilder/Logos), "
-            "'marketing' (SEO/Texte), 'finance' (Kalkulationen/Rechnungen), 'automation' (n8n/APIs). "
-            "Fasse die Antwort des Fachagenten fuer Z zusammen. Antworte klar, knapp und auf Deutsch."
+            "Du planst Aufgaben, priorisierst Projekte, verwaltest Kalender und E-Mail und bist der "
+            "erste Ansprechpartner fuer alles. Fuer Aufgaben, die Spezialwissen erfordern, delegiere an "
+            "den passenden Fachagenten: 'developer' (Code/Terminal), 'research' (Internetrecherche), "
+            "'design' (Bilder/Logos), 'marketing' (SEO/Texte), 'finance' (Kalkulationen/Rechnungen), "
+            "'automation' (n8n/APIs). Fasse die Antwort des Fachagenten fuer Z zusammen. Antworte klar, "
+            "knapp und auf Deutsch."
         ),
-        "tools": ["delegate_to_agent", "create_task", "prioritize_projects", "read_memory"],
+        "tools": [
+            "delegate_to_agent",
+            "create_task",
+            "prioritize_projects",
+            "read_memory",
+            "list_calendar_events",
+            "create_calendar_event",
+            "list_recent_emails",
+            "send_email",
+        ],
     },
     {
         "slug": "developer",
