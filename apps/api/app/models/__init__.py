@@ -1,6 +1,9 @@
 from app.models.agent import Agent
 from app.models.audit_log import AuditLog
 from app.models.conversation import Conversation
+from app.models.document import Document
+from app.models.document_chunk import DocumentChunk
+from app.models.memory_fact import MemoryFact
 from app.models.message import Message
 from app.models.model_config import ModelConfig
 from app.models.role import Role
@@ -16,4 +19,7 @@ __all__ = [
     "Agent",
     "Conversation",
     "Message",
+    "Document",
+    "DocumentChunk",
+    "MemoryFact",
 ]

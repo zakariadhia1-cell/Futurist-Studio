@@ -40,6 +40,19 @@ REST: `GET /api/v1/agents`, `GET/POST /api/v1/conversations`,
 WebSocket: `/ws/chat/{conversation_id}?token=<access_token>` (Envelope:
 `{"type": "user_message", "content": "..."}` rein, `token`/`done`/`error` raus).
 
+## Wissensdatenbank & Gedaechtnis (Phase 2)
+
+Braucht die `vector`-Extension (Postgres): lokal `postgresql-16-pgvector` installieren
+und einmalig `CREATE EXTENSION vector;` (macht die erste Phase-2-Migration automatisch,
+sofern der DB-User dazu berechtigt ist - im Docker-Compose-Setup der Fall, lokal ggf.
+als Superuser). Ohne `OPENAI_API_KEY` laeuft die Embeddings-Erzeugung ueber einen
+deterministischen Bag-of-Words-Fallback (funktional, aber keine echte Semantik).
+
+REST: `GET/POST /api/v1/knowledge/documents`, `GET/DELETE /api/v1/knowledge/documents/{id}`,
+`POST /api/v1/knowledge/search`. Der Chat-WebSocket durchsucht bei jeder Nachricht
+automatisch Dokumente und `memory_facts` und haengt relevante Treffer (Cosine-Distanz
+< 0.9) an den System-Prompt an.
+
 ## Tests
 
 ```bash

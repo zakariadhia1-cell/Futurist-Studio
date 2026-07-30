@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_token
 from app.db.base import get_db
+from app.memory.search import build_memory_context, search_documents, search_memory_facts
 from app.models.agent import Agent
 from app.models.conversation import Conversation
 from app.models.message import Message
@@ -78,9 +79,17 @@ async def chat_socket(
                     )
                 ).scalars().all()
 
+                chunks = await search_documents(db, user_id, content)
+                facts = await search_memory_facts(db, user_id, content)
+                memory_context = build_memory_context(chunks, facts)
+
                 full_reply = ""
                 async for chunk in stream_agent_reply(
-                    agent, model_config.provider, model_config.model_name, history
+                    agent,
+                    model_config.provider,
+                    model_config.model_name,
+                    history,
+                    memory_context=memory_context,
                 ):
                     full_reply += chunk
                     await websocket.send_json({"type": "token", "payload": {"text": chunk}})

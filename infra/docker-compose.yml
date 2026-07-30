@@ -2,7 +2,9 @@ name: futurist-os
 
 services:
   postgres:
-    image: postgres:16
+    # pgvector/pgvector, not plain postgres - Phase 2's knowledge base needs the vector
+    # extension, which vanilla postgres images don't ship.
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-futurist}
