@@ -8,13 +8,13 @@ Ein persönliches KI-Betriebssystem: ein Executive Agent koordiniert sechs Facha
 und Terminal. Architektur, DB-Schema, API-Design und Entwicklungsplan stehen in
 [`docs/architecture/FUTURIST_OS_ARCHITECTURE.md`](docs/architecture/FUTURIST_OS_ARCHITECTURE.md).
 
-**Phase 0-4 (Fundament, Core Chat, Wissensdatenbank, Multi-Agent-Orchestrierung, Browser-/Terminalsteuerung) sind implementiert:**
+**Phase 0-5 (Fundament, Core Chat, Wissensdatenbank, Multi-Agent-Orchestrierung, Browser-/Terminalsteuerung, alle 7 Fachagenten) sind implementiert:**
 
 | Ordner | Inhalt |
 |---|---|
-| `apps/api/` | FastAPI-Backend: Auth (JWT), Postgres+Alembic, Redis, Model-Abstraction (OpenAI/Anthropic/Ollama) inkl. Tool-Calling, pgvector-Wissensdatenbank mit automatischer Kontext-Einbindung im Chat, 3 Agenten (Executive/Developer/Research) mit Tools und Delegation, Projekte/Aufgaben-API, Live-Browsersteuerung (Playwright) und Terminal-Sessions (echtes PTY) |
+| `apps/api/` | FastAPI-Backend: Auth (JWT), Postgres+Alembic, Redis, Model-Abstraction (OpenAI/Anthropic/Ollama) inkl. Tool-Calling, pgvector-Wissensdatenbank mit automatischer Kontext-Einbindung im Chat, alle 7 Agenten (Executive, Developer, Research, Design, Marketing, Finance, Automation) mit Tools und Delegation, Projekte/Aufgaben-API, Live-Browsersteuerung (Playwright) und Terminal-Sessions (echtes PTY), Bildgenerierung, PDF-Erstellung, SEO-Analyse, n8n-Integration |
 | `apps/web/` | React + TypeScript + Tailwind Dashboard: Dark/Anthrazit/Silber-Theme, Navigation, Login, Chat-UI mit Streaming, Wissensdatenbank-, Agenten-, Projekte-, Aufgaben-, Browser- (Live-Screenshot) und Terminal-UI (xterm.js) |
-| `infra/` | Docker Compose (Postgres mit pgvector, Redis, API, Web) |
+| `infra/` | Docker Compose (Postgres mit pgvector, Redis, API, Web, n8n) |
 
 Setup: [`apps/api/README.md`](apps/api/README.md), [`apps/web/README.md`](apps/web/README.md),
 [`infra/README.md`](infra/README.md).

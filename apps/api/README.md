@@ -96,6 +96,24 @@ REST: `GET/POST /api/v1/terminal/sessions`, `DELETE /api/v1/terminal/sessions/{i
 WebSocket: `/ws/terminal/{session_id}?token=...` — `{"type":"input","data":"..."}` oder
 `{"type":"resize","rows":...,"cols":...}` rein, `{"type":"output","data":"..."}` raus.
 
+## Restliche Fachagenten (Phase 5)
+
+Vier weitere Agenten (`design`, `marketing`, `finance`, `automation`), siehe
+`scripts/seed.py` fuer Systemprompt und Tool-Zuordnung.
+
+- **Design**: `generate_image` (OpenAI `dall-e-3`, nutzt `OPENAI_API_KEY`) - speichert
+  Ergebnisse im Workspace unter `images/`.
+- **Marketing**: `seo_analyze` (echte Heuristiken - Title-/Meta-Laenge, H1-Anzahl,
+  fehlende Bild-Alt-Texte, Textumfang; kein externer SEO-Dienst noetig) + `web_search`.
+- **Finance**: `calculate` (sicherer AST-basierter Ausdrucksauswerter, kein `eval()`),
+  `generate_invoice_pdf`/`generate_report` (echte PDFs via `reportlab`, gespeichert unter
+  `invoices/`/`reports/`).
+- **Automation**: `list_n8n_workflows`/`trigger_n8n_workflow` (n8n-REST-API bzw.
+  Webhook-Pfad, braucht `N8N_BASE_URL`/`N8N_API_KEY` - siehe `infra/docker-compose.yml`
+  fuer den mitgelieferten n8n-Service), `call_api` (generischer HTTP-Aufruf mit
+  SSRF-Schutz in `app/orchestrator/tools/ssrf_guard.py` - interne/private Netzwerkziele
+  werden abgelehnt).
+
 ## Tests
 
 ```bash

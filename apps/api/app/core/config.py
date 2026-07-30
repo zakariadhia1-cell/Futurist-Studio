@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     # pre-provisioned binary in a nonstandard location.
     PLAYWRIGHT_EXECUTABLE_PATH: str = ""
 
+    # --- Automation Agent / n8n (Phase 5) ---
+    N8N_BASE_URL: str = ""
+    N8N_API_KEY: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
