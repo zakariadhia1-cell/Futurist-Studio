@@ -8,6 +8,7 @@ from app.api.v1 import (
     files,
     health,
     knowledge,
+    mcp,
     notes,
     projects,
     tasks,
@@ -30,3 +31,4 @@ router.include_router(vision.router)
 router.include_router(voice.router)
 router.include_router(files.router)
 router.include_router(notes.router)
+router.include_router(mcp.router)

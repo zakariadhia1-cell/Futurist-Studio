@@ -1,6 +1,7 @@
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/card'
 import { useAuthStore } from '@/store/auth-store'
+import { McpServersPanel } from './McpServersPanel'
 
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user)
@@ -32,6 +33,7 @@ export function SettingsPage() {
           Phase 1 (Model-Abstraction).
         </p>
       </Card>
+      <McpServersPanel />
     </>
   )
 }

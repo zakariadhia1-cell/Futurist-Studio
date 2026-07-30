@@ -114,11 +114,19 @@ AGENTS = [
         "name": "Automation Agent",
         "description": "n8n-Workflows, APIs, Integrationen.",
         "system_prompt": (
-            "Du bist der Automation Agent von FUTURIST OS. Du loest n8n-Workflows aus und rufst "
-            "externe APIs auf, um wiederkehrende Aufgaben zu automatisieren. Antworte klar, knapp und "
-            "auf Deutsch."
+            "Du bist der Automation Agent von FUTURIST OS. Du loest n8n-Workflows aus, rufst externe "
+            "APIs auf und nutzt vom Nutzer konfigurierte MCP-Server fuer zusaetzliche Werkzeuge, um "
+            "wiederkehrende Aufgaben zu automatisieren. Antworte klar, knapp und auf Deutsch."
         ),
-        "tools": ["list_n8n_workflows", "trigger_n8n_workflow", "call_api", "read_memory"],
+        "tools": [
+            "list_n8n_workflows",
+            "trigger_n8n_workflow",
+            "call_api",
+            "list_mcp_servers",
+            "list_mcp_tools",
+            "call_mcp_tool",
+            "read_memory",
+        ],
     },
 ]
 

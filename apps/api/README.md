@@ -151,6 +151,26 @@ Architektur-Dokument, Abschnitt 3.1), ein OAuth-Callback-Endpunkt, und Tools
 (`list_events`/`create_event`/`send_email`) fuer den Executive Agent nach demselben Muster
 wie die bestehenden Tools in `app/orchestrator/tools/`.
 
+## Plugin-System & MCP (Phase 8)
+
+Entscheidung: MCP-Server **sind** das Plugin-System - kein zusaetzlicher, separater
+Python-Plugin-Loader daneben. Ein MCP-Server ist ein Prozess (stdio, z.B. `npx
+@modelcontextprotocol/server-...`) oder eine Remote-URL (SSE), der eigene Tools anbietet;
+das ist strukturell dasselbe, was auch Claude Desktop & Co. als "Plugin"/"Erweiterung"
+bezeichnen, nur standardisiert. Ein zweiter, eigener Erweiterungsmechanismus daneben waere
+Redundanz.
+
+REST: `GET/POST /api/v1/mcp/servers`, `PATCH/DELETE /api/v1/mcp/servers/{id}`,
+`GET /api/v1/mcp/servers/{id}/tools` (verbindet sich testweise und listet die Tools des
+Servers auf). Der Automation Agent bekommt drei Tools dafuer: `list_mcp_servers`,
+`list_mcp_tools`, `call_mcp_tool` (siehe `app/orchestrator/tools/mcp_tools.py`).
+
+`app/mcp/client.py` verbindet sich fuer jeden Aufruf neu (kein dauerhaft offener Prozess/
+keine Session-Pool) - einfacher und über das requestbasierte Async-Modell der API hinweg
+korrekt (derselbe Trade-off wie bei Browser-/Terminal-Sessions), kostet dafuer einen
+Handshake pro Aufruf. Fuer den persoenlichen Gebrauch unproblematisch; ein Session-Pool
+waere noetig, sobald MCP-Tools sehr haeufig/latenzkritisch genutzt werden.
+
 ## Tests
 
 ```bash

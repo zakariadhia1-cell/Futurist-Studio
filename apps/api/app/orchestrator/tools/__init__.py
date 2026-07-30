@@ -7,6 +7,7 @@ from app.orchestrator.tools import (  # noqa: F401
     files,
     finance,
     marketing,
+    mcp_tools,
     memory,
     research,
     tasks,
