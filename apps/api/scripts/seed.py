@@ -39,11 +39,44 @@ MODEL_CONFIGS = [
     },
 ]
 
-EXECUTIVE_SYSTEM_PROMPT = """Du bist der Executive Agent von FUTURIST OS, dem persoenlichen \
-KI-Betriebssystem von Z. Du planst Aufgaben, priorisierst Projekte und bist der erste \
-Ansprechpartner fuer alles. Antworte klar, knapp und auf Deutsch. Delegation an \
-Fachagenten (Developer, Design, Marketing, Research, Automation, Finance) kommt in einer \
-spaeteren Ausbaustufe - bis dahin beantwortest du Anfragen direkt."""
+AGENTS = [
+    {
+        "slug": "executive",
+        "name": "Executive Agent",
+        "description": "Plant Aufgaben, priorisiert Projekte, koordiniert Fachagenten.",
+        "system_prompt": (
+            "Du bist der Executive Agent von FUTURIST OS, dem persoenlichen KI-Betriebssystem von Z. "
+            "Du planst Aufgaben, priorisierst Projekte und bist der erste Ansprechpartner fuer alles. "
+            "Fuer Aufgaben, die Programmieren, Recherche oder andere Spezialgebiete erfordern, "
+            "delegiere an den passenden Fachagenten (z.B. 'developer' fuer Code, 'research' fuer "
+            "Internetrecherche) und fasse dessen Antwort fuer Z zusammen. Antworte klar, knapp und "
+            "auf Deutsch."
+        ),
+        "tools": ["delegate_to_agent", "create_task", "prioritize_projects", "read_memory"],
+    },
+    {
+        "slug": "developer",
+        "name": "Developer Agent",
+        "description": "Programmiert, debuggt, erstellt Software im Workspace des Nutzers.",
+        "system_prompt": (
+            "Du bist der Developer Agent von FUTURIST OS. Du schreibst und aenderst Code im "
+            "persoenlichen Workspace-Ordner des Nutzers, fuehrst Befehle aus und erklaerst, was du "
+            "getan hast. Antworte klar, knapp und auf Deutsch."
+        ),
+        "tools": ["read_file", "write_file", "run_terminal_command", "read_memory"],
+    },
+    {
+        "slug": "research",
+        "name": "Research Agent",
+        "description": "Internetrecherche, Zusammenfassungen, Vergleiche.",
+        "system_prompt": (
+            "Du bist der Research Agent von FUTURIST OS. Du recherchierst im Internet, liest "
+            "Webseiten und fasst deine Erkenntnisse praezise fuer den Nutzer zusammen. Nenne deine "
+            "Quellen. Antworte klar, knapp und auf Deutsch."
+        ),
+        "tools": ["web_search", "read_page", "read_memory"],
+    },
+]
 
 
 async def seed_roles(db) -> None:
@@ -73,21 +106,22 @@ async def seed_model_configs(db) -> ModelConfig:
     return default_config
 
 
-async def seed_executive_agent(db, default_model: ModelConfig) -> None:
-    existing = await db.execute(select(Agent).where(Agent.slug == "executive"))
-    if existing.scalar_one_or_none() is None:
-        db.add(
-            Agent(
-                slug="executive",
-                name="Executive Agent",
-                description="Plant Aufgaben, priorisiert Projekte, koordiniert Fachagenten.",
-                system_prompt=EXECUTIVE_SYSTEM_PROMPT,
-                default_model_id=default_model.id,
-                config={},
-                enabled=True,
+async def seed_agents(db, default_model: ModelConfig) -> None:
+    for cfg in AGENTS:
+        existing = await db.execute(select(Agent).where(Agent.slug == cfg["slug"]))
+        if existing.scalar_one_or_none() is None:
+            db.add(
+                Agent(
+                    slug=cfg["slug"],
+                    name=cfg["name"],
+                    description=cfg["description"],
+                    system_prompt=cfg["system_prompt"],
+                    default_model_id=default_model.id,
+                    config={"tools": cfg["tools"]},
+                    enabled=True,
+                )
             )
-        )
-        print("Agent angelegt: executive")
+            print(f"Agent angelegt: {cfg['slug']}")
 
 
 async def seed_all() -> None:
@@ -96,7 +130,7 @@ async def seed_all() -> None:
         await db.flush()
         default_model = await seed_model_configs(db)
         await db.flush()
-        await seed_executive_agent(db, default_model)
+        await seed_agents(db, default_model)
         await db.commit()
 
 

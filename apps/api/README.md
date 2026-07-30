@@ -53,6 +53,25 @@ REST: `GET/POST /api/v1/knowledge/documents`, `GET/DELETE /api/v1/knowledge/docu
 automatisch Dokumente und `memory_facts` und haengt relevante Treffer (Cosine-Distanz
 < 0.9) an den System-Prompt an.
 
+## Multi-Agent-Orchestrierung & Tools (Phase 3)
+
+Drei Agenten (`executive`, `developer`, `research`) mit eigenen Tool-Sets (siehe
+`scripts/seed.py`). Tool-Calling laeuft ueber `ModelProvider.chat_with_tools()`
+(Anthropic und OpenAI unterstuetzen es nativ; Ollama noch nicht). Ein Agent mit Tools
+durchlaeuft die Schleife in `app/orchestrator/runner.py::run_agent_turn` (max.
+`MAX_TOOL_ITERATIONS` Runden) statt der einfachen Streaming-Antwort - dadurch verliert
+er live Token-Streaming zugunsten von Tool-Nutzung; der finale Text wird stattdessen
+wortweise ans Frontend "nachgestreamt".
+
+Tools (`app/orchestrator/tools/`): `delegate_to_agent` (Executive delegiert an einen
+Fachagenten), `create_task`/`prioritize_projects` (Projekte/Aufgaben), `read_memory`
+(Wissensdatenbank-Suche als expliziter Tool-Aufruf), `read_file`/`write_file`/
+`run_terminal_command` (Developer, sandboxed auf `WORKSPACES_DIR/<user_id>/` - siehe
+den Sicherheitshinweis in `app/orchestrator/tools/sandbox.py`), `web_search`/`read_page`
+(Research, DuckDuckGo + httpx, kein API-Key noetig).
+
+Neue REST-Endpunkte: `GET/POST/PATCH/DELETE /api/v1/projects`, `.../tasks`.
+
 ## Tests
 
 ```bash

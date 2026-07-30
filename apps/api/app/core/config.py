@@ -1,7 +1,10 @@
 """Central application settings, loaded from environment variables (.env)."""
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_API_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class Settings(BaseSettings):
@@ -36,6 +39,11 @@ class Settings(BaseSettings):
 
     # --- CORS ---
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+
+    # --- Developer Agent sandbox ---
+    # Every user gets a subdirectory here; read_file/write_file/run_terminal_command are
+    # confined to it (no access to the rest of the container's filesystem).
+    WORKSPACES_DIR: str = os.path.join(_API_ROOT, "workspaces")
 
 
 @lru_cache

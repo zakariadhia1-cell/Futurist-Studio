@@ -224,3 +224,7 @@ dist-ssr/
 *.local
 npm-debug.log*
 .vite/
+
+# Developer Agent sandbox workspaces (per-user, generated at runtime)
+apps/api/workspaces/*
+!apps/api/workspaces/.gitkeep

@@ -63,6 +63,13 @@ async def client():
         yield ac
 
 
+@pytest_asyncio.fixture
+async def db_session():
+    """A raw session for tests that call orchestrator/tool code directly, bypassing HTTP."""
+    async with TestSessionLocal() as session:
+        yield session
+
+
 async def register_and_login(client: AsyncClient, email: str = "z@futurist.os") -> str:
     """Registers a fresh user and returns a valid access token."""
     await client.post(

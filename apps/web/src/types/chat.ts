@@ -3,6 +3,7 @@ export interface Agent {
   slug: string
   name: string
   description: string | null
+  tools: string[]
 }
 
 export interface Conversation {

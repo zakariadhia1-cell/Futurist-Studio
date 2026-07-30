@@ -16,4 +16,4 @@ async def list_agents(
     db: AsyncSession = Depends(get_db), _: User = Depends(get_current_user)
 ) -> list[AgentRead]:
     result = await db.execute(select(Agent).where(Agent.enabled.is_(True)).order_by(Agent.name))
-    return [AgentRead.model_validate(a) for a in result.scalars().all()]
+    return [AgentRead.from_model(a) for a in result.scalars().all()]

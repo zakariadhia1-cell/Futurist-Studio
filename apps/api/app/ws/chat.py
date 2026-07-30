@@ -9,6 +9,7 @@ Server -> client: {"type": "token", "payload": {"text": "..."}}
              then: {"type": "done", "payload": {}}
           or (per-message, connection stays open): {"type": "error", "payload": {"message": "..."}}
 """
+import asyncio
 import json
 import uuid
 
@@ -23,9 +24,37 @@ from app.models.agent import Agent
 from app.models.conversation import Conversation
 from app.models.message import Message
 from app.models.model_config import ModelConfig
-from app.orchestrator.runner import stream_agent_reply
+from app.orchestrator.runner import run_agent_turn, stream_agent_reply
+from app.orchestrator.tool_registry import ToolContext
 
 router = APIRouter()
+
+
+async def _stream_reply(
+    websocket: WebSocket, agent, model_config, history, memory_context: str, db, user_id, conversation_id
+) -> str:
+    """Returns the full reply text, having already streamed it to the client as
+    token events. Agents with tools configured run the tool-calling loop (no live
+    token streaming from the provider - the final text is chunked word-by-word here
+    instead, for a consistent UI); agents without tools stream directly."""
+    has_tools = bool((agent.config or {}).get("tools"))
+    if not has_tools:
+        full_reply = ""
+        async for chunk in stream_agent_reply(
+            agent, model_config.provider, model_config.model_name, history, memory_context=memory_context
+        ):
+            full_reply += chunk
+            await websocket.send_json({"type": "token", "payload": {"text": chunk}})
+        return full_reply
+
+    tool_context = ToolContext(db=db, user_id=user_id, conversation_id=conversation_id)
+    full_reply = await run_agent_turn(
+        agent, model_config.provider, model_config.model_name, history, tool_context, memory_context=memory_context
+    )
+    for word in full_reply.split(" "):
+        await websocket.send_json({"type": "token", "payload": {"text": word + " "}})
+        await asyncio.sleep(0)
+    return full_reply
 
 
 @router.websocket("/ws/chat/{conversation_id}")
@@ -83,16 +112,9 @@ async def chat_socket(
                 facts = await search_memory_facts(db, user_id, content)
                 memory_context = build_memory_context(chunks, facts)
 
-                full_reply = ""
-                async for chunk in stream_agent_reply(
-                    agent,
-                    model_config.provider,
-                    model_config.model_name,
-                    history,
-                    memory_context=memory_context,
-                ):
-                    full_reply += chunk
-                    await websocket.send_json({"type": "token", "payload": {"text": chunk}})
+                full_reply = await _stream_reply(
+                    websocket, agent, model_config, history, memory_context, db, user_id, conversation.id
+                )
 
                 db.add(
                     Message(

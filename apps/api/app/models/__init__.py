@@ -6,8 +6,10 @@ from app.models.document_chunk import DocumentChunk
 from app.models.memory_fact import MemoryFact
 from app.models.message import Message
 from app.models.model_config import ModelConfig
+from app.models.project import Project
 from app.models.role import Role
 from app.models.session import Session
+from app.models.task import Task
 from app.models.user import User
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "Document",
     "DocumentChunk",
     "MemoryFact",
+    "Project",
+    "Task",
 ]

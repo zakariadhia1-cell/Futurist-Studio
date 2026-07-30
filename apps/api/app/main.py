@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import app.orchestrator.tools  # noqa: F401 - import side effect: registers built-in tools
 from app.api.v1 import router as v1_router
 from app.core.config import get_settings
 from app.ws.chat import router as chat_ws_router
