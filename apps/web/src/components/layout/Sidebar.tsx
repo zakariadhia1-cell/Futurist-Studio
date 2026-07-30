@@ -17,6 +17,7 @@ const NAV_GROUPS: Array<{ label: string; items: Array<{ to: string; label: strin
       { to: '/projects', label: 'Projekte' },
       { to: '/tasks', label: 'Aufgaben' },
       { to: '/files', label: 'Dateien' },
+      { to: '/notes', label: 'Notizen' },
       { to: '/knowledge', label: 'Wissensdatenbank' },
     ],
   },

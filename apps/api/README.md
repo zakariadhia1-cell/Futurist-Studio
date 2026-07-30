@@ -128,6 +128,29 @@ ab und nutzt `window.speechSynthesis` als Fallback (siehe `apps/web/src/lib/voic
 Spracheingabe im Chat laeuft direkt im Browser ueber die Web Speech API (kein Server-
 Roundtrip noetig).
 
+## Dateien & Notizen (Phase 7)
+
+**Dateien**: `POST /api/v1/files` (Multipart-Upload, Feld `upload`, Limit `MAX_FILE_SIZE_BYTES`
+- Standard 25MB), `GET /api/v1/files`, `GET /api/v1/files/{id}/download`,
+`DELETE /api/v1/files/{id}`. Blobs liegen unter `FILES_DIR/<user_id>/<storage_key>` -
+`storage_key` ist ein zufaelliger UUID-Hex, nicht der Original-Dateiname (schliesst
+Path-Traversal ueber praeparierte Dateinamen von vornherein aus; der Original-Name wird
+nur als Metadatenfeld `filename` fuer die Anzeige/den Download gespeichert).
+
+**Notizen**: `GET/POST /api/v1/notes`, `PATCH/DELETE /api/v1/notes/{id}` - einfache
+Freitext-Notizen (Titel + Inhalt). To-Dos sind bewusst nicht als eigene Entitaet
+angelegt - das bestehende Tasks-System (Phase 3) deckt das bereits ab.
+
+### Kalender & E-Mail (Phase 7 - offen)
+
+Bewusst nicht implementiert: beides braucht eine Google-OAuth-Client-ID/-Secret (oder
+einen vergleichbaren Provider), die nur der Nutzer selbst in der jeweiligen Cloud-Console
+anlegen kann - dafuer gibt es keinen sinnvollen serverseitigen Default. Sobald Credentials
+vorliegen, ist die Erweiterung ueberschaubar: ein `CalendarEvent`/`Email`-Modell (siehe
+Architektur-Dokument, Abschnitt 3.1), ein OAuth-Callback-Endpunkt, und Tools
+(`list_events`/`create_event`/`send_email`) fuer den Executive Agent nach demselben Muster
+wie die bestehenden Tools in `app/orchestrator/tools/`.
+
 ## Tests
 
 ```bash

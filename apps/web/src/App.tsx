@@ -9,6 +9,7 @@ import { DashboardPage } from '@/app/dashboard/DashboardPage'
 import { FilesPage } from '@/app/files/FilesPage'
 import { KnowledgePage } from '@/app/knowledge/KnowledgePage'
 import { LoginPage } from '@/app/login/LoginPage'
+import { NotesPage } from '@/app/notes/NotesPage'
 import { ProjectsPage } from '@/app/projects/ProjectsPage'
 import { SettingsPage } from '@/app/settings/SettingsPage'
 import { TasksPage } from '@/app/tasks/TasksPage'
@@ -27,6 +28,7 @@ function App() {
             <Route path="projects" element={<ProjectsPage />} />
             <Route path="tasks" element={<TasksPage />} />
             <Route path="files" element={<FilesPage />} />
+            <Route path="notes" element={<NotesPage />} />
             <Route path="knowledge" element={<KnowledgePage />} />
             <Route path="automations" element={<AutomationsPage />} />
             <Route path="browser" element={<BrowserPage />} />

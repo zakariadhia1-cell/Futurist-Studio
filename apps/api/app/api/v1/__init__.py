@@ -5,8 +5,10 @@ from app.api.v1 import (
     auth,
     browser,
     conversations,
+    files,
     health,
     knowledge,
+    notes,
     projects,
     tasks,
     terminal,
@@ -26,3 +28,5 @@ router.include_router(browser.router)
 router.include_router(terminal.router)
 router.include_router(vision.router)
 router.include_router(voice.router)
+router.include_router(files.router)
+router.include_router(notes.router)

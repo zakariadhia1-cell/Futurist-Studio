@@ -60,6 +60,12 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: str = ""
     ELEVENLABS_VOICE_ID: str = "21m00Tcm4TlvDq8ikWAM"
 
+    # --- Files (Phase 7) ---
+    # Every user gets a subdirectory here; uploaded/generated files are stored under a
+    # random key (not the original filename) to rule out path traversal entirely.
+    FILES_DIR: str = os.path.join(_API_ROOT, "storage", "files")
+    MAX_FILE_SIZE_BYTES: int = 25 * 1024 * 1024
+
 
 @lru_cache
 def get_settings() -> Settings:
