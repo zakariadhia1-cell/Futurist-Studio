@@ -9,9 +9,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements/base.txt requirements/base.txt
 RUN pip install --no-cache-dir -r requirements/base.txt
+# Chromium for the Browser Automation feature (app/live/browser_manager.py).
+RUN playwright install --with-deps chromium
 
 COPY . .
 RUN chmod +x docker-entrypoint.sh
+RUN mkdir -p workspaces
 
 EXPOSE 8000
 

@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     # confined to it (no access to the rest of the container's filesystem).
     WORKSPACES_DIR: str = os.path.join(_API_ROOT, "workspaces")
 
+    # --- Browser automation (Phase 4) ---
+    # Leave unset to let Playwright resolve its own installed browser; only needed for a
+    # pre-provisioned binary in a nonstandard location.
+    PLAYWRIGHT_EXECUTABLE_PATH: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

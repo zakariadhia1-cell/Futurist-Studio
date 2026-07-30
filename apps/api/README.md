@@ -72,6 +72,30 @@ den Sicherheitshinweis in `app/orchestrator/tools/sandbox.py`), `web_search`/`re
 
 Neue REST-Endpunkte: `GET/POST/PATCH/DELETE /api/v1/projects`, `.../tasks`.
 
+## Browser- & Terminalsteuerung (Phase 4)
+
+**Browser** (`app/live/browser_manager.py`): Playwright-Sessions **im API-Prozess**
+statt in einem eigenen `browser-worker`-Container (Architektur-Dokument empfiehlt
+Isolation in einem separaten Service - hier bewusst zugunsten eines schnell lauffaehigen
+Features reduziert; Session-/Aktions-API ist bereits so geschnitten, dass sie sich spaeter
+hinter eine Job-Queue in einen echten Worker verschieben laesst). Fuer lokale Tests ohne
+`playwright install` in dieser Sandbox: `PLAYWRIGHT_EXECUTABLE_PATH` in `.env` auf einen
+vorhandenen Chromium-Pfad setzen.
+
+REST: `GET/POST /api/v1/browser/sessions`, `DELETE /api/v1/browser/sessions/{id}`.
+WebSocket: `/ws/browser/{session_id}?token=...` — `{"type":"action","action":"navigate"
+|"click"|"fill"|"go_back"|"screenshot","args":{...}}` rein, `screenshot`/`result`/`error`
+raus (Screenshot als Base64-PNG nach jeder Aktion).
+
+**Terminal** (`app/live/terminal_manager.py`): echtes PTY (`os.openpty`), kein reines
+Pipe-Streaming — interaktive Programme funktionieren korrekt. Sandboxed auf
+`WORKSPACES_DIR/<user_id>/`, gleicher Hinweis wie beim `run_terminal_command`-Tool:
+Verzeichnis-Ebene, kein echtes OS-Sandboxing.
+
+REST: `GET/POST /api/v1/terminal/sessions`, `DELETE /api/v1/terminal/sessions/{id}`.
+WebSocket: `/ws/terminal/{session_id}?token=...` — `{"type":"input","data":"..."}` oder
+`{"type":"resize","rows":...,"cols":...}` rein, `{"type":"output","data":"..."}` raus.
+
 ## Tests
 
 ```bash
