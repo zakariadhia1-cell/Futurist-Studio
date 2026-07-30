@@ -8,12 +8,12 @@ Ein persönliches KI-Betriebssystem: ein Executive Agent koordiniert sechs Facha
 und Terminal. Architektur, DB-Schema, API-Design und Entwicklungsplan stehen in
 [`docs/architecture/FUTURIST_OS_ARCHITECTURE.md`](docs/architecture/FUTURIST_OS_ARCHITECTURE.md).
 
-**Phase 0 (Fundament) ist implementiert:**
+**Phase 0 (Fundament) und Phase 1 (Core Chat) sind implementiert:**
 
 | Ordner | Inhalt |
 |---|---|
-| `apps/api/` | FastAPI-Backend: Auth (JWT, Register/Login/Refresh/Logout), Postgres+Alembic, Redis-Health-Check |
-| `apps/web/` | React + TypeScript + Tailwind Dashboard: Dark/Anthrazit/Silber-Theme, Navigation, Login |
+| `apps/api/` | FastAPI-Backend: Auth (JWT, Register/Login/Refresh/Logout), Postgres+Alembic, Redis-Health-Check, Model-Abstraction (OpenAI/Anthropic/Ollama), Executive Agent, Chat REST + WebSocket-Streaming |
+| `apps/web/` | React + TypeScript + Tailwind Dashboard: Dark/Anthrazit/Silber-Theme, Navigation, Login, Chat-UI mit Streaming |
 | `infra/` | Docker Compose (Postgres, Redis, API, Web) |
 
 Setup: [`apps/api/README.md`](apps/api/README.md), [`apps/web/README.md`](apps/web/README.md),

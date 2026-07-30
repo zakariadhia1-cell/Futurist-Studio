@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     # --- Secrets encryption (Fernet key for encrypting stored API keys) ---
     ENCRYPTION_KEY: str = ""
 
+    # --- Model providers ---
+    # Per-user encrypted keys (app.core.config.ENCRYPTION_KEY) land in Phase 9; for now a
+    # single set of server-wide keys is enough to exercise the abstraction end to end.
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+
     # --- CORS ---
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 

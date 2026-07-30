@@ -5,6 +5,8 @@ from sqlalchemy.pool import NullPool
 
 from app.db.base import Base, get_db
 from app.main import app
+from app.models.agent import Agent
+from app.models.model_config import ModelConfig
 from app.models.role import Role
 
 TEST_DATABASE_URL = "postgresql+asyncpg://futurist:futurist@localhost:5432/futurist_os_test"
@@ -23,6 +25,22 @@ async def setup_database():
 
     async with TestSessionLocal() as session:
         session.add_all([Role(slug="admin", name="Administrator"), Role(slug="member", name="Mitglied")])
+        model_config = ModelConfig(
+            provider="anthropic",
+            model_name="claude-haiku-4-5-20251001",
+            display_name="Claude Haiku 4.5",
+            is_default=True,
+        )
+        session.add(model_config)
+        await session.flush()
+        session.add(
+            Agent(
+                slug="executive",
+                name="Executive Agent",
+                system_prompt="Du bist ein hilfreicher Test-Agent.",
+                default_model_id=model_config.id,
+            )
+        )
         await session.commit()
 
     yield
@@ -41,3 +59,13 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+async def register_and_login(client: AsyncClient, email: str = "z@futurist.os") -> str:
+    """Registers a fresh user and returns a valid access token."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "supersecret123", "full_name": "Z"},
+    )
+    login = await client.post("/api/v1/auth/login", json={"email": email, "password": "supersecret123"})
+    return login.json()["access_token"]
