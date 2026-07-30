@@ -1,6 +1,18 @@
 from fastapi import APIRouter
 
-from app.api.v1 import agents, auth, browser, conversations, health, knowledge, projects, tasks, terminal
+from app.api.v1 import (
+    agents,
+    auth,
+    browser,
+    conversations,
+    health,
+    knowledge,
+    projects,
+    tasks,
+    terminal,
+    vision,
+    voice,
+)
 
 router = APIRouter()
 router.include_router(health.router)
@@ -12,3 +24,5 @@ router.include_router(projects.router)
 router.include_router(tasks.router)
 router.include_router(browser.router)
 router.include_router(terminal.router)
+router.include_router(vision.router)
+router.include_router(voice.router)

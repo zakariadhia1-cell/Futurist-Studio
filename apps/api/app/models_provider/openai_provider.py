@@ -75,3 +75,18 @@ class OpenAIProvider(ModelProvider):
                 ]
             )
         return ChatResult(text=message.content or "")
+
+    async def analyze_image(self, image_b64: str, media_type: str, instruction: str, model: str) -> str:
+        response = await self._client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": instruction},
+                        {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{image_b64}"}},
+                    ],
+                }
+            ],
+        )
+        return response.choices[0].message.content or ""

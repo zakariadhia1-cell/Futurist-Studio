@@ -114,6 +114,20 @@ Vier weitere Agenten (`design`, `marketing`, `finance`, `automation`), siehe
   SSRF-Schutz in `app/orchestrator/tools/ssrf_guard.py` - interne/private Netzwerkziele
   werden abgelehnt).
 
+## Vision, OCR & Sprache (Phase 6)
+
+**Vision/OCR**: `POST /api/v1/vision/analyze` (Multipart-Upload + optionale `instruction`),
+`POST /api/v1/vision/ocr`. Nutzt automatisch das vision-faehige `model_config` (Anthropic
+oder OpenAI - `capabilities.vision`), kein separater Key noetig. `ModelProvider.analyze_image()`
+ist auf Anthropic und OpenAI implementiert.
+
+**Sprache**: `POST /api/v1/voice/transcribe` (Multipart-Audio, OpenAI Whisper -
+`OPENAI_API_KEY`), `POST /api/v1/voice/speak` (JSON `{"text": "..."}`, ElevenLabs -
+`ELEVENLABS_API_KEY`, sonst `501`). Das Frontend faengt ein fehlendes `ELEVENLABS_API_KEY`
+ab und nutzt `window.speechSynthesis` als Fallback (siehe `apps/web/src/lib/voice.ts`).
+Spracheingabe im Chat laeuft direkt im Browser ueber die Web Speech API (kein Server-
+Roundtrip noetig).
+
 ## Tests
 
 ```bash

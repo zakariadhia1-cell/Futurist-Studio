@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     N8N_BASE_URL: str = ""
     N8N_API_KEY: str = ""
 
+    # --- Voice (Phase 6) ---
+    # STT reuses OPENAI_API_KEY (Whisper). TTS is ElevenLabs, genuinely optional - the
+    # frontend falls back to the browser's own speechSynthesis when unset.
+    ELEVENLABS_API_KEY: str = ""
+    ELEVENLABS_VOICE_ID: str = "21m00Tcm4TlvDq8ikWAM"
+
 
 @lru_cache
 def get_settings() -> Settings:

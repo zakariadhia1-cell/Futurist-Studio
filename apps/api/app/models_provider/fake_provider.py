@@ -16,6 +16,9 @@ class FakeProvider(ModelProvider):
             await asyncio.sleep(0)
             yield word + " "
 
+    async def analyze_image(self, image_b64: str, media_type: str, instruction: str, model: str) -> str:
+        return self._response
+
 
 class ScriptedToolProvider(ModelProvider):
     """Returns a pre-scripted sequence of ChatResults, one per call to chat_with_tools -

@@ -32,6 +32,7 @@ async def setup_database():
             model_name="claude-haiku-4-5-20251001",
             display_name="Claude Haiku 4.5",
             is_default=True,
+            capabilities={"tools": True, "vision": True},
         )
         session.add(model_config)
         await session.flush()

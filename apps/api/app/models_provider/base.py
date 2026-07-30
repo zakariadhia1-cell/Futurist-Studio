@@ -59,3 +59,8 @@ class ModelProvider(ABC):
             raise NotImplementedError(f"{type(self).__name__} unterstuetzt kein Tool-Calling.")
         text = "".join([chunk async for chunk in self.stream_chat(system_prompt, messages, model)])
         return ChatResult(text=text)
+
+    async def analyze_image(self, image_b64: str, media_type: str, instruction: str, model: str) -> str:
+        """Describe/read an image (Phase 6: Vision/OCR). Default: unsupported - only
+        providers with a vision-capable API override this."""
+        raise NotImplementedError(f"{type(self).__name__} unterstuetzt keine Bildanalyse.")

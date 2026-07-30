@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import { connectChatSocket, sendUserMessage } from '@/lib/chat-socket'
+import { speak } from '@/lib/voice'
 import { useAuthStore } from '@/store/auth-store'
 import type { ChatMessage, Conversation } from '@/types/chat'
 
@@ -13,6 +14,9 @@ export function ChatPage() {
   const [streamingText, setStreamingText] = useState('')
   const [status, setStatus] = useState<'connecting' | 'ready' | 'sending' | 'error'>('connecting')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [voiceReplies, setVoiceReplies] = useState(false)
+  const [listening, setListening] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(true)
   const socketRef = useRef<WebSocket | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   // Mirrors `streamingText` for synchronous reads in onDone. Needed because onDone must
@@ -21,6 +25,12 @@ export function ChatPage() {
   // invokes updater functions twice to catch exactly this: a side effect (setMessages)
   // hidden inside an updater fires twice and duplicates the message.
   const streamingRef = useRef('')
+  // The onDone closure below is created once (the effect's deps are [accessToken] only,
+  // so the WS connection isn't torn down and rebuilt every time voiceReplies changes) -
+  // reading `voiceReplies` directly there would use whatever value existed at mount time
+  // forever. Mirroring it into a ref keeps onDone reading the current value.
+  const voiceRepliesRef = useRef(voiceReplies)
+  voiceRepliesRef.current = voiceReplies
 
   useEffect(() => {
     let cancelled = false
@@ -55,6 +65,7 @@ export function ChatPage() {
                 created_at: new Date().toISOString(),
               },
             ])
+            if (voiceRepliesRef.current) speak(finalText, accessToken)
           }
           streamingRef.current = ''
           setStreamingText('')
@@ -86,6 +97,11 @@ export function ChatPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [messages, streamingText])
 
+  useEffect(() => {
+    const SpeechRecognitionCtor = window.SpeechRecognition ?? window.webkitSpeechRecognition
+    setSpeechSupported(!!SpeechRecognitionCtor)
+  }, [])
+
   function handleSend() {
     const content = draft.trim()
     if (!content || !socketRef.current || status !== 'ready') return
@@ -99,9 +115,32 @@ export function ChatPage() {
     setStatus('sending')
   }
 
+  function handleMicClick() {
+    const SpeechRecognitionCtor = window.SpeechRecognition ?? window.webkitSpeechRecognition
+    if (!SpeechRecognitionCtor) return
+
+    const recognition = new SpeechRecognitionCtor()
+    recognition.lang = 'de-DE'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onstart = () => setListening(true)
+    recognition.onend = () => setListening(false)
+    recognition.onerror = () => setListening(false)
+    recognition.onresult = (event) => {
+      const said = event.results[0][0].transcript
+      setDraft(said)
+    }
+    recognition.start()
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       <PageHeader title="Chat" subtitle="Executive Agent" />
+
+      <label className="mb-2 flex items-center gap-2 text-xs text-text-mid">
+        <input type="checkbox" checked={voiceReplies} onChange={(e) => setVoiceReplies(e.target.checked)} />
+        Antworten vorlesen
+      </label>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-panel p-4">
         {messages.length === 0 && !streamingText && (
@@ -147,6 +186,16 @@ export function ChatPage() {
           disabled={status !== 'ready'}
           className="flex-1 rounded-md border border-border bg-panel-2 px-3 py-2 text-sm text-text-hi placeholder:text-text-low outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/40 disabled:opacity-50"
         />
+        {speechSupported && (
+          <Button
+            variant={listening ? 'primary' : 'ghost'}
+            onClick={handleMicClick}
+            disabled={status !== 'ready'}
+            title="Spracheingabe"
+          >
+            {listening ? '● Hoere...' : '🎤'}
+          </Button>
+        )}
         <Button onClick={handleSend} disabled={status !== 'ready' || !draft.trim()}>
           Senden
         </Button>

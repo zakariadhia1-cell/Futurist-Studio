@@ -69,3 +69,19 @@ class AnthropicProvider(ModelProvider):
 
         text = "".join(block.text for block in response.content if block.type == "text")
         return ChatResult(text=text)
+
+    async def analyze_image(self, image_b64: str, media_type: str, instruction: str, model: str) -> str:
+        response = await self._client.messages.create(
+            model=model,
+            max_tokens=1024,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
+                        {"type": "text", "text": instruction},
+                    ],
+                }
+            ],
+        )
+        return "".join(block.text for block in response.content if block.type == "text")
