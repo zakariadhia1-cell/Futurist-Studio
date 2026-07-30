@@ -232,3 +232,6 @@ apps/api/workspaces/*
 # Files feature storage (per-user, generated at runtime)
 apps/api/storage/*
 !apps/api/storage/.gitkeep
+
+# Backup dumps produced by infra/scripts/backup.sh
+infra/backups/

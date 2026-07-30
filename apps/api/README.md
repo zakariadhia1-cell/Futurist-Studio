@@ -171,6 +171,32 @@ korrekt (derselbe Trade-off wie bei Browser-/Terminal-Sessions), kostet dafuer e
 Handshake pro Aufruf. Fuer den persoenlichen Gebrauch unproblematisch; ein Session-Pool
 waere noetig, sobald MCP-Tools sehr haeufig/latenzkritisch genutzt werden.
 
+## Sicherheit & Haertung (Phase 9)
+
+- **Verschluesselung at rest**: `app/core/crypto.py` (Fernet, `ENCRYPTION_KEY`) - bisher
+  angewendet auf MCP-Server-Umgebungsvariablen (`app/models/mcp_server.py`), da das der
+  einzige Ort ist, an dem Nutzer aktuell Secrets in der DB ablegen. Ohne gesetzten
+  Schluessel: Klartext-Fallback mit einmaliger Log-Warnung (gleiches Verhalten wie bei
+  anderen optionalen Einstellungen in diesem Projekt) - fuer Produktion unbedingt setzen.
+- **RBAC**: `app/core/dependencies.py::require_admin` - erste registrierte Person wird
+  automatisch `admin`, alle weiteren `member` (siehe `auth.py`). Bisher einzige
+  admin-only-Ressource: `GET /api/v1/audit-logs`.
+- **Audit-Logging**: `app/core/audit.py` schreibt in `audit_logs` (Modell existierte seit
+  Phase 0, war aber bis jetzt unbenutzt). Erfasst: Auth-Ereignisse (Login, fehlgeschlagener
+  Login, Registrierung, Logout) sowie beispielhaft die drei in der Architektur explizit
+  genannten agentengesteuerten Aktionen (Datei geschrieben, n8n-Workflow ausgeloest,
+  MCP-Tool aufgerufen) - nicht jeder einzelne Endpunkt, siehe Code-Kommentare fuer die
+  Begruendung.
+- **Rate-Limiting**: `app/core/rate_limit.py`, Redis-basiertes Fixed-Window. Angewendet auf
+  `POST /auth/login` (10/5min) und `POST /auth/register` (5/Stunde) pro Client-IP.
+- **Strukturiertes Logging**: `app/core/logging_config.py` - JSON-Logs auf stdout, keine
+  zusaetzliche Abhaengigkeit noetig. `SENTRY_DSN` optional fuer Fehler-Tracking.
+- **Backups**: `infra/scripts/backup.sh`/`restore.sh` - siehe `infra/README.md`.
+- **Lasttests**: bewusst ausgelassen. Ohne eine echte Ziel-Infrastruktur (Staging-Umgebung
+  mit realistischen Ressourcengrenzen) wuerde ein Lasttest nur eine Zahl produzieren, die
+  fuer die tatsaechliche Produktionsumgebung nichts aussagt - sollte nachgeholt werden,
+  sobald ein konkretes Deployment-Ziel feststeht.
+
 ## Tests
 
 ```bash

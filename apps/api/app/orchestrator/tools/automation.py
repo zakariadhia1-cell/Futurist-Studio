@@ -3,6 +3,7 @@ import json
 
 import httpx
 
+from app.core import audit
 from app.core.config import get_settings
 from app.orchestrator.tool_registry import Tool, ToolContext, register
 from app.orchestrator.tools.ssrf_guard import is_safe_url
@@ -48,6 +49,16 @@ async def _trigger_n8n_workflow(arguments: dict, ctx: ToolContext) -> str:
             resp.raise_for_status()
     except Exception as exc:
         return f"n8n-Workflow konnte nicht ausgeloest werden: {exc}"
+
+    audit.record(
+        ctx.db,
+        user_id=ctx.user_id,
+        action="automation_agent.trigger_n8n_workflow",
+        resource_type="n8n_workflow",
+        resource_id=webhook_path,
+        metadata={"status_code": resp.status_code},
+    )
+    await ctx.db.commit()
 
     body = resp.text[:_MAX_RESPONSE_CHARS]
     return f"Workflow '{webhook_path}' ausgeloest (Status {resp.status_code}).\nAntwort: {body}"

@@ -1,9 +1,11 @@
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from app.core.config import get_settings
 from app.db.base import Base, get_db
 from app.main import app
 from app.models.agent import Agent
@@ -46,6 +48,20 @@ async def setup_database():
         )
         await session.commit()
 
+    yield
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _reset_rate_limits():
+    """Rate-limit counters live in real Redis, not the per-test Postgres DB that
+    setup_database() resets - without this, tests that each register/login a fresh user
+    (most of the suite) would accumulate against the same rate-limit key (ASGITransport
+    requests have no real client IP, so every test shares one 'unknown' key) and start
+    tripping 429s partway through the suite."""
+    redis = Redis.from_url(get_settings().REDIS_URL)
+    async for key in redis.scan_iter("ratelimit:*"):
+        await redis.delete(key)
+    await redis.aclose()
     yield
 
 

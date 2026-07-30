@@ -1,5 +1,6 @@
 import os
 
+from app.core import audit
 from app.orchestrator.tool_registry import Tool, ToolContext, register
 from app.orchestrator.tools.sandbox import resolve_in_workspace
 
@@ -35,6 +36,16 @@ async def _write_file(arguments: dict, ctx: ToolContext) -> str:
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
     with open(full_path, "w", encoding="utf-8") as f:
         f.write(content)
+
+    audit.record(
+        ctx.db,
+        user_id=ctx.user_id,
+        action="developer_agent.write_file",
+        resource_type="workspace_file",
+        resource_id=path,
+        metadata={"chars": len(content)},
+    )
+    await ctx.db.commit()
     return f"Datei '{path}' gespeichert ({len(content)} Zeichen)."
 
 

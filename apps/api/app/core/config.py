@@ -31,8 +31,11 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = ""
 
     # --- Model providers ---
-    # Per-user encrypted keys (app.core.config.ENCRYPTION_KEY) land in Phase 9; for now a
-    # single set of server-wide keys is enough to exercise the abstraction end to end.
+    # Server-wide keys are enough to exercise the abstraction end to end for a
+    # single-admin deployment; per-user encrypted provider keys would be a genuine
+    # multi-tenant feature, out of scope for the Phase 0 single-user assumption. Secrets
+    # that *are* user-supplied and stored in the DB (MCP server env vars, Phase 9) are
+    # encrypted at rest via ENCRYPTION_KEY - see app/core/crypto.py.
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
     OLLAMA_BASE_URL: str = "http://localhost:11434"
@@ -65,6 +68,10 @@ class Settings(BaseSettings):
     # random key (not the original filename) to rule out path traversal entirely.
     FILES_DIR: str = os.path.join(_API_ROOT, "storage", "files")
     MAX_FILE_SIZE_BYTES: int = 25 * 1024 * 1024
+
+    # --- Observability (Phase 9) ---
+    # Genuinely optional: unset, the app just logs structured JSON to stdout.
+    SENTRY_DSN: str = ""
 
 
 @lru_cache

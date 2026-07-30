@@ -14,6 +14,7 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
+from app.core import crypto
 from app.models.mcp_server import McpServer
 
 _TIMEOUT_SECONDS = 20.0
@@ -23,9 +24,8 @@ async def _open_session(server: McpServer, stack: AsyncExitStack) -> ClientSessi
     if server.transport == "stdio":
         if not server.command:
             raise ValueError("Server hat kein 'command' konfiguriert.")
-        params = StdioServerParameters(
-            command=server.command, args=list(server.args or []), env=(dict(server.env) or None)
-        )
+        env = {key: crypto.decrypt(value) for key, value in (server.env or {}).items()}
+        params = StdioServerParameters(command=server.command, args=list(server.args or []), env=(env or None))
         read_stream, write_stream = await stack.enter_async_context(stdio_client(params))
     elif server.transport == "sse":
         if not server.url:

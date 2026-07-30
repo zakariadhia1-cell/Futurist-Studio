@@ -3,6 +3,7 @@ app/models/mcp_server.py for why this is FUTURIST OS's plugin mechanism rather t
 separate plugin-loader system."""
 from sqlalchemy import select
 
+from app.core import audit
 from app.mcp import client as mcp_client
 from app.models.mcp_server import McpServer
 from app.orchestrator.tool_registry import Tool, ToolContext, register
@@ -54,9 +55,19 @@ async def _call_mcp_tool(arguments: dict, ctx: ToolContext) -> str:
     if server is None:
         return f"Kein aktivierter MCP-Server mit dem Namen '{server_name}' gefunden."
     try:
-        return await mcp_client.call_tool(server, tool_name, tool_arguments)
+        result = await mcp_client.call_tool(server, tool_name, tool_arguments)
     except Exception as exc:
         return f"MCP-Tool-Aufruf fehlgeschlagen: {exc}"
+
+    audit.record(
+        ctx.db,
+        user_id=ctx.user_id,
+        action="automation_agent.call_mcp_tool",
+        resource_type="mcp_tool",
+        resource_id=f"{server_name}/{tool_name}",
+    )
+    await ctx.db.commit()
+    return result
 
 
 register(

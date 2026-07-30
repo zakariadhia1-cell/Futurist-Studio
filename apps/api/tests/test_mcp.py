@@ -3,6 +3,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from sqlalchemy import select
 
 import app.orchestrator.tools  # noqa: F401 - registers built-in tools
 from app.orchestrator.tool_registry import ToolContext, execute_tool
@@ -91,6 +92,40 @@ async def test_servers_are_isolated_per_user(client):
     assert (await client.get("/api/v1/mcp/servers", headers=headers_b)).json() == []
     assert (await client.get(f"/api/v1/mcp/servers/{server_id}/tools", headers=headers_b)).status_code == 404
     assert (await client.delete(f"/api/v1/mcp/servers/{server_id}", headers=headers_b)).status_code == 404
+
+
+async def test_server_env_is_encrypted_at_rest(client, db_session, monkeypatch):
+    from cryptography.fernet import Fernet
+
+    from app.core import crypto
+    from app.core.config import get_settings
+    from app.models.mcp_server import McpServer
+
+    monkeypatch.setenv("ENCRYPTION_KEY", Fernet.generate_key().decode())
+    get_settings.cache_clear()
+    crypto._get_fernet.cache_clear()
+    try:
+        headers = await _auth_headers(client)
+        create = await client.post(
+            "/api/v1/mcp/servers",
+            json={
+                "name": "with-secret",
+                "transport": "stdio",
+                "command": "echo",
+                "env": {"API_KEY": "super-secret-value"},
+            },
+            headers=headers,
+        )
+        server_id = create.json()["id"]
+
+        result = await db_session.execute(select(McpServer).where(McpServer.id == uuid.UUID(server_id)))
+        server = result.scalar_one()
+        assert server.env["API_KEY"] != "super-secret-value"
+        assert crypto.decrypt(server.env["API_KEY"]) == "super-secret-value"
+    finally:
+        monkeypatch.delenv("ENCRYPTION_KEY", raising=False)
+        get_settings.cache_clear()
+        crypto._get_fernet.cache_clear()
 
 
 async def test_list_mcp_servers_tool_reports_none_configured(client, db_session):

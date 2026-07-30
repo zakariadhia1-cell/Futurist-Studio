@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import crypto
 from app.core.dependencies import get_current_user
 from app.db.base import get_db
 from app.mcp import client as mcp_client
@@ -36,7 +37,9 @@ async def list_servers(
 async def create_server(
     payload: McpServerCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
 ) -> McpServerRead:
-    server = McpServer(user_id=user.id, **payload.model_dump())
+    data = payload.model_dump()
+    data["env"] = {key: crypto.encrypt(value) for key, value in data["env"].items()}
+    server = McpServer(user_id=user.id, **data)
     db.add(server)
     await db.commit()
     await db.refresh(server)
