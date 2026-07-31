@@ -29,6 +29,27 @@ async def test_mcp_servers_require_auth(client):
     assert (await client.get("/api/v1/mcp/servers")).status_code == 401
 
 
+async def test_non_admin_member_cannot_create_or_invoke_mcp_servers(client):
+    """F1 (docs/FIX_PLAN.md, S1 in docs/AUDIT_REPORT.md): a self-registered member must
+    not be able to register a stdio MCP server (arbitrary command execution on the API
+    host) or invoke tools on one - only the admin can."""
+    await _auth_headers(client)  # first user in this fresh DB, becomes admin - not used further
+    member_token = await register_and_login(client, email="member@futurist.os")
+    member_headers = {"Authorization": f"Bearer {member_token}"}
+
+    create = await client.post(
+        "/api/v1/mcp/servers",
+        json={"name": "evil", "transport": "stdio", "command": "/bin/bash", "args": ["-c", "id"]},
+        headers=member_headers,
+    )
+    assert create.status_code == 403
+
+    # Even a server the member somehow owned couldn't be listed/invoked as a member -
+    # verified against a random id since the create above was correctly rejected.
+    fake_id = str(uuid.uuid4())
+    assert (await client.get(f"/api/v1/mcp/servers/{fake_id}/tools", headers=member_headers)).status_code == 403
+
+
 async def test_create_server_validates_transport_fields(client):
     headers = await _auth_headers(client)
     missing_command = await client.post(
@@ -79,6 +100,8 @@ async def test_list_server_tools_uses_real_stdio_server(client):
 
 
 async def test_servers_are_isolated_per_user(client):
+    # The first registered user in this test's fresh DB is always admin (see auth.py) -
+    # required now that create_server/list_server_tools are admin-gated (F1).
     headers_a = await _auth_headers(client)
     create = await client.post(
         "/api/v1/mcp/servers",
@@ -90,7 +113,9 @@ async def test_servers_are_isolated_per_user(client):
     token_b = await register_and_login(client, email="b-mcp@futurist.os")
     headers_b = {"Authorization": f"Bearer {token_b}"}
     assert (await client.get("/api/v1/mcp/servers", headers=headers_b)).json() == []
-    assert (await client.get(f"/api/v1/mcp/servers/{server_id}/tools", headers=headers_b)).status_code == 404
+    # user B is a regular member, not admin - blocked before the ownership check even
+    # runs (403), not the 404 a non-owning admin would see.
+    assert (await client.get(f"/api/v1/mcp/servers/{server_id}/tools", headers=headers_b)).status_code == 403
     assert (await client.delete(f"/api/v1/mcp/servers/{server_id}", headers=headers_b)).status_code == 404
 
 

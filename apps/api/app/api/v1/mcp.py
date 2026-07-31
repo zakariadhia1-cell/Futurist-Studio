@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import crypto
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin
 from app.db.base import get_db
 from app.mcp import client as mcp_client
 from app.models.mcp_server import McpServer
@@ -35,8 +35,12 @@ async def list_servers(
 
 @router.post("/servers", response_model=McpServerRead, status_code=status.HTTP_201_CREATED)
 async def create_server(
-    payload: McpServerCreate, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+    payload: McpServerCreate, db: AsyncSession = Depends(get_db), user: User = Depends(require_admin)
 ) -> McpServerRead:
+    # F1 (docs/FIX_PLAN.md, S1 in docs/AUDIT_REPORT.md): stdio transport lets the
+    # caller pick an arbitrary command/args, executed as a subprocess on the API host
+    # the moment anyone lists or calls its tools (see list_server_tools below) - admin
+    # only, same trust level as the Terminal feature.
     data = payload.model_dump()
     data["env"] = {key: crypto.encrypt(value) for key, value in data["env"].items()}
     server = McpServer(user_id=user.id, **data)
@@ -72,8 +76,13 @@ async def delete_server(
 
 @router.get("/servers/{server_id}/tools", response_model=list[McpToolInfo])
 async def list_server_tools(
-    server_id: uuid.UUID, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)
+    server_id: uuid.UUID, db: AsyncSession = Depends(get_db), user: User = Depends(require_admin)
 ) -> list[McpToolInfo]:
+    # F1: this is the endpoint that actually connects (subprocess-execs for stdio
+    # transport) - admin-gated for the same reason as create_server above. Ownership
+    # scoping in _get_owned_server would already stop a member from reaching another
+    # user's server, but since only admins can create one at all after the fix above,
+    # this is defense-in-depth against that invariant ever being weakened later.
     server = await _get_owned_server(server_id, db, user)
     try:
         tools = await mcp_client.list_tools(server)
