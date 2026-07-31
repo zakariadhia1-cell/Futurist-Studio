@@ -12,13 +12,56 @@ import base64
 import re
 import uuid
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
-from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, Playwright, Route, async_playwright
 
 from app.core.config import get_settings
+from app.orchestrator.tools.ssrf_guard import resolve_safe_ip
 
 _playwright: Playwright | None = None
 _browser: Browser | None = None
+
+# F5 (docs/FIX_PLAN.md, S5 in docs/AUDIT_REPORT.md): schemes that don't touch the
+# network or the host filesystem - self-contained page content, safe to allow.
+_SAFE_NON_NETWORK_SCHEMES = {"data", "about", "blob"}
+# Schemes that read from the host filesystem or otherwise shouldn't be reachable from
+# agent-supplied navigation - file: was the concrete exploit in S5
+# (navigate({"url":"file:///etc/passwd"}) + screenshot).
+_BLOCKED_SCHEMES = {"file"}
+
+
+async def _guard_request(route: Route) -> None:
+    """Blocks every request the page - or content it renders - tries to make, not just
+    the top-level navigate() URL. A real headless browser is a much bigger SSRF surface
+    than a single fetch: it follows redirects itself, loads subresources (images,
+    scripts, XHR), and can run page JS that issues its own fetch() calls - checking only
+    the initial navigate() URL (see execute_action below) would miss all of those.
+    Registered once per session in create_session() via page.route("**/*", ...), so this
+    covers navigation, redirects, and every subresource load for the session's lifetime.
+
+    Residual risk, documented rather than silently accepted: like is_safe_url() before
+    F7, this is resolve-then-decide, not a pinned connection - Chromium's own network
+    stack re-resolves DNS independently when it actually connects, so a fast-enough
+    DNS-rebinding attack has the same theoretical TOCTOU window F7 closed for
+    pinned_request(). Playwright's public API doesn't expose a way to pin a request to a
+    specific IP the way httpx's `extensions` do, so this is best-effort, not equivalent
+    to F7's guarantee - accepted given the "single trusted admin" threat model stated
+    throughout this codebase (see sandbox.py), not adequate for an untrusted
+    multi-tenant deployment.
+    """
+    parsed = urlparse(route.request.url)
+    if parsed.scheme in _SAFE_NON_NETWORK_SCHEMES:
+        await route.continue_()
+        return
+    if parsed.scheme not in ("http", "https"):
+        await route.abort()
+        return
+    hostname = parsed.hostname
+    if not hostname or resolve_safe_ip(hostname) is None:
+        await route.abort()
+        return
+    await route.continue_()
 
 
 @dataclass
@@ -58,6 +101,7 @@ async def create_session(user_id: uuid.UUID) -> BrowserSession:
     browser = await _ensure_browser()
     context = await browser.new_context(viewport={"width": 1280, "height": 800})
     page = await context.new_page()
+    await page.route("**/*", _guard_request)
     session_id = str(uuid.uuid4())
     session = BrowserSession(id=session_id, user_id=user_id, context=context, page=page)
     _sessions[session_id] = session
@@ -95,6 +139,18 @@ async def execute_action(session: BrowserSession, action: str, args: dict) -> st
         # data: URL turns into the nonsensical "https://data:...".
         if not _HAS_SCHEME.match(url):
             url = f"https://{url}"
+        # F5: reject clearly upfront (a friendly message) rather than relying solely on
+        # _guard_request()'s route.abort(), which would surface as an opaque
+        # "net::ERR_FAILED" from Playwright. _guard_request() still runs regardless -
+        # this is a fast, clear first check, not a replacement for it (redirects and
+        # subresource loads only ever go through _guard_request, never through here).
+        parsed = urlparse(url)
+        if parsed.scheme in _BLOCKED_SCHEMES:
+            return f"Navigation zu '{parsed.scheme}:'-URLs ist nicht erlaubt."
+        if parsed.scheme in ("http", "https"):
+            hostname = parsed.hostname
+            if not hostname or resolve_safe_ip(hostname) is None:
+                return "URL abgelehnt: nur oeffentliche http(s)-Adressen sind erlaubt (keine internen/privaten Ziele)."
         await page.goto(url, wait_until="domcontentloaded", timeout=15000)
         return f"Navigiert zu {url}"
     if action == "click":
