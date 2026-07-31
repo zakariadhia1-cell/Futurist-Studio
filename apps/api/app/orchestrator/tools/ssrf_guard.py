@@ -97,3 +97,29 @@ async def pinned_request(client: httpx.AsyncClient, method: str, url: str, **kwa
         extensions["sni_hostname"] = hostname
 
     return await client.request(method, pinned_url, headers=headers, extensions=extensions, **kwargs)
+
+
+_MAX_REDIRECTS = 5
+
+
+async def follow_redirects_safely(client: httpx.AsyncClient, method: str, url: str, **kwargs) -> httpx.Response:
+    """SSRF-safe request that also follows redirects manually, re-validating (and
+    re-pinning) every hop before following it - F4 (docs/FIX_PLAN.md, S4 in
+    docs/AUDIT_REPORT.md). `pinned_request()` alone only protects the first request: if
+    its caller's client (or a kwarg here) set `follow_redirects=True`, httpx would follow
+    subsequent hops with its own internal DNS resolution, none of which ever goes
+    through pinned_request - an attacker's own server can happily 200 the SSRF guard's
+    request and then serve a 302 to http://169.254.169.254/ as the *page content*, which
+    is exactly what redirects are. The passed `client` must not itself be configured with
+    follow_redirects=True, or this protection is bypassed before it even runs."""
+    kwargs.pop("follow_redirects", None)
+    current_url = url
+    for _ in range(_MAX_REDIRECTS + 1):
+        resp = await pinned_request(client, method, current_url, **kwargs)
+        if not resp.is_redirect:
+            return resp
+        location = resp.headers.get("location")
+        if not location:
+            return resp
+        current_url = str(httpx.URL(current_url).join(location))
+    raise UnsafeUrlError(f"Zu viele Weiterleitungen (Limit: {_MAX_REDIRECTS}).")

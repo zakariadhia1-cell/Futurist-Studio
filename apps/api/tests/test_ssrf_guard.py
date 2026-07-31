@@ -3,7 +3,13 @@ import ipaddress
 import httpx
 import pytest
 
-from app.orchestrator.tools.ssrf_guard import UnsafeUrlError, is_safe_url, pinned_request, resolve_safe_ip
+from app.orchestrator.tools.ssrf_guard import (
+    UnsafeUrlError,
+    follow_redirects_safely,
+    is_safe_url,
+    pinned_request,
+    resolve_safe_ip,
+)
 
 
 def test_rejects_loopback():
@@ -91,3 +97,77 @@ async def test_pinned_request_rejects_private_targets_without_making_a_request()
         with pytest.raises(UnsafeUrlError):
             await pinned_request(client, "GET", "ftp://example.com/")
     assert transport.captured is None
+
+
+class _ScriptedRedirectTransport(httpx.MockTransport):
+    """Keys responses by the Host *header* (not the connection host, which
+    pinned_request always rewrites to a resolved IP) - lets one mock simulate a
+    multi-hop redirect chain across real, DNS-resolvable hostnames."""
+
+    def __init__(self, script: dict[str, httpx.Response]):
+        self.script = script
+        self.requests: list[httpx.Request] = []
+        super().__init__(self._handle)
+
+    def _handle(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        return self.script.get(request.headers.get("host", ""), httpx.Response(404))
+
+
+@pytest.mark.asyncio
+async def test_follow_redirects_safely_returns_directly_when_no_redirect():
+    transport = _ScriptedRedirectTransport({"example.com": httpx.Response(200, text="hi")})
+    async with httpx.AsyncClient(transport=transport, timeout=10) as client:
+        resp = await follow_redirects_safely(client, "GET", "https://example.com/")
+    assert resp.status_code == 200
+    assert resp.text == "hi"
+    assert len(transport.requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_follow_redirects_safely_follows_and_re_pins_each_hop():
+    transport = _ScriptedRedirectTransport(
+        {
+            "example.com": httpx.Response(302, headers={"location": "https://dns.google/final"}),
+            "dns.google": httpx.Response(200, text="final page"),
+        }
+    )
+    async with httpx.AsyncClient(transport=transport, timeout=10) as client:
+        resp = await follow_redirects_safely(client, "GET", "https://example.com/start")
+    assert resp.status_code == 200
+    assert resp.text == "final page"
+    assert len(transport.requests) == 2
+    assert transport.requests[0].headers["host"] == "example.com"
+    assert transport.requests[1].headers["host"] == "dns.google"
+    # Both hops actually connected to a resolved IP, not the hostname - proves the
+    # second hop went through pinned_request again, not httpx's own redirect handling.
+    for req in transport.requests:
+        ipaddress.ip_address(req.url.host)
+
+
+@pytest.mark.asyncio
+async def test_follow_redirects_safely_rejects_a_redirect_to_a_private_target():
+    """The exact bypass S4 describes: the first hop is a legitimate public URL: the
+    attacker's own server, which then redirects to an internal target as the "page
+    content". A guard that only checks the initial URL would follow it straight in."""
+    transport = _ScriptedRedirectTransport(
+        {"example.com": httpx.Response(302, headers={"location": "http://169.254.169.254/latest/meta-data/"})}
+    )
+    async with httpx.AsyncClient(transport=transport, timeout=10) as client:
+        with pytest.raises(UnsafeUrlError):
+            await follow_redirects_safely(client, "GET", "https://example.com/start")
+    # The malicious second hop never reached the transport - rejected before connecting.
+    assert len(transport.requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_follow_redirects_safely_gives_up_after_too_many_hops():
+    transport = _ScriptedRedirectTransport(
+        {
+            "example.com": httpx.Response(302, headers={"location": "https://dns.google/next"}),
+            "dns.google": httpx.Response(302, headers={"location": "https://example.com/next"}),
+        }
+    )
+    async with httpx.AsyncClient(transport=transport, timeout=10) as client:
+        with pytest.raises(UnsafeUrlError):
+            await follow_redirects_safely(client, "GET", "https://example.com/start")

@@ -2,6 +2,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from app.orchestrator.tool_registry import Tool, ToolContext, register
+from app.orchestrator.tools.ssrf_guard import UnsafeUrlError, follow_redirects_safely
 
 _MAX_PAGE_CHARS = 6_000
 
@@ -42,9 +43,15 @@ async def _read_page(arguments: dict, ctx: ToolContext) -> str:
     if not url.startswith(("http://", "https://")):
         url = f"https://{url}"
     try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
-            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; FuturistOS/1.0)"})
+        # follow_redirects intentionally left at its httpx default (False) - each hop
+        # is validated and followed manually by follow_redirects_safely(), not by httpx.
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await follow_redirects_safely(
+                client, "GET", url, headers={"User-Agent": "Mozilla/5.0 (compatible; FuturistOS/1.0)"}
+            )
             resp.raise_for_status()
+    except UnsafeUrlError:
+        return "URL abgelehnt: nur oeffentliche http(s)-Adressen sind erlaubt (keine internen/privaten Ziele)."
     except Exception as exc:
         return f"Seite konnte nicht geladen werden: {exc}"
 
