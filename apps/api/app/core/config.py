@@ -92,9 +92,18 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _enforce_production_secrets(self) -> "Settings":
         """Fail loudly at startup instead of quietly running with forgeable auth
-        tokens in production (F8 in docs/FIX_PLAN.md - S8 in docs/AUDIT_REPORT.md).
-        Dev/test are unaffected: this only fires when ENV=production, so the
-        convenience default above still works locally."""
+        tokens or plaintext-stored secrets in production (F8/F9 in docs/FIX_PLAN.md -
+        S8/S9 in docs/AUDIT_REPORT.md). Dev/test are unaffected: this only fires when
+        ENV=production, so the convenience defaults above still work locally.
+
+        F9 is enforced here rather than in app/core/crypto.py because this validator
+        runs once at Settings construction (i.e. real app startup, via main.py's
+        `settings = get_settings()`), matching the fix plan's own "same
+        startup-validation approach as F8" - crypto.py's encrypt()/decrypt() are called
+        lazily per-request and have no natural startup hook of their own. Once this
+        check passes, ENCRYPTION_KEY is guaranteed non-empty, so crypto.py's plaintext
+        fallback path (see its own docstring) is dead code in production - it stays in
+        place only as the dev/test convenience it's documented to be."""
         if self.ENV != "production":
             return self
 
@@ -107,6 +116,12 @@ class Settings(BaseSettings):
             problems.append(
                 f"JWT_SECRET_KEY fehlt, ist der unsichere Platzhalter, oder kuerzer als "
                 f"{_MIN_SECRET_LENGTH} Zeichen. Erzeugen mit: openssl rand -hex 32"
+            )
+        if not self.ENCRYPTION_KEY:
+            problems.append(
+                "ENCRYPTION_KEY fehlt - gespeicherte Secrets (MCP-Server-Umgebungsvariablen, "
+                "Google-OAuth-Tokens) wuerden im Klartext abgelegt. Erzeugen mit: "
+                'python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
             )
         if problems:
             raise RuntimeError(

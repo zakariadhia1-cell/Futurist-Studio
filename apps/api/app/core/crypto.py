@@ -5,6 +5,12 @@ Degrades gracefully instead of hard-failing when ENCRYPTION_KEY is unset - the s
 pattern already used for other optional-but-important settings (ElevenLabs, n8n): stay
 functional for local dev, but make the gap loudly visible via a one-time log warning.
 Generate a real key for production with `Fernet.generate_key()`.
+
+F9 (docs/FIX_PLAN.md): in production this fallback is unreachable, not just discouraged
+- app/core/config.py::Settings._enforce_production_secrets() refuses to even start the
+app if ENV=production and ENCRYPTION_KEY is empty, so by the time any code here runs,
+ENCRYPTION_KEY is guaranteed set. The plaintext fallback below only ever executes in
+dev/test, where that's the intended, documented behavior.
 """
 import logging
 from functools import lru_cache
