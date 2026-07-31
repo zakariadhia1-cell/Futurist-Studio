@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/components/layout/RequireAuth'
 import { AgentsPage } from '@/app/agents/AgentsPage'
@@ -14,6 +14,19 @@ import { ProjectsPage } from '@/app/projects/ProjectsPage'
 import { SettingsPage } from '@/app/settings/SettingsPage'
 import { TasksPage } from '@/app/tasks/TasksPage'
 import { TerminalPage } from '@/app/terminal/TerminalPage'
+import { OSLayout } from '@/os/layout/OSLayout'
+import { OverviewPage as OSOverviewPage } from '@/os/pages/OverviewPage'
+import { AgentsPage as OSAgentsPage } from '@/os/pages/AgentsPage'
+import { TasksPage as OSTasksPage } from '@/os/pages/TasksPage'
+import { ProjectsPage as OSProjectsPage } from '@/os/pages/ProjectsPage'
+import { ShopifyPage as OSShopifyPage } from '@/os/pages/ShopifyPage'
+import { GastroPage as OSGastroPage } from '@/os/pages/GastroPage'
+import { ChatPage as OSChatPage } from '@/os/pages/ChatPage'
+import { AutomationsPage as OSAutomationsPage } from '@/os/pages/AutomationsPage'
+import { MonitoringPage as OSMonitoringPage } from '@/os/pages/MonitoringPage'
+import { NotificationsPage as OSNotificationsPage } from '@/os/pages/NotificationsPage'
+import { AnalyticsPage as OSAnalyticsPage } from '@/os/pages/AnalyticsPage'
+import { SettingsPage as OSSettingsPage } from '@/os/pages/SettingsPage'
 
 function App() {
   return (
@@ -34,6 +47,22 @@ function App() {
             <Route path="browser" element={<BrowserPage />} />
             <Route path="terminal" element={<TerminalPage />} />
             <Route path="settings" element={<SettingsPage />} />
+          </Route>
+
+          <Route path="os" element={<OSLayout />}>
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<OSOverviewPage />} />
+            <Route path="agents" element={<OSAgentsPage />} />
+            <Route path="tasks" element={<OSTasksPage />} />
+            <Route path="projects" element={<OSProjectsPage />} />
+            <Route path="shopify" element={<OSShopifyPage />} />
+            <Route path="gastro" element={<OSGastroPage />} />
+            <Route path="chat" element={<OSChatPage />} />
+            <Route path="automations" element={<OSAutomationsPage />} />
+            <Route path="monitoring" element={<OSMonitoringPage />} />
+            <Route path="notifications" element={<OSNotificationsPage />} />
+            <Route path="analytics" element={<OSAnalyticsPage />} />
+            <Route path="settings" element={<OSSettingsPage />} />
           </Route>
         </Route>
       </Routes>

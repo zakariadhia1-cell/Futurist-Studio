@@ -7,6 +7,7 @@ const NAV_GROUPS: Array<{ label: string; items: Array<{ to: string; label: strin
     label: 'Uebersicht',
     items: [
       { to: '/', label: 'Dashboard' },
+      { to: '/os', label: 'Kontrollzentrum (OS)' },
       { to: '/chat', label: 'Chat' },
       { to: '/agents', label: 'Agenten' },
     ],

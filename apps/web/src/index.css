@@ -17,6 +17,18 @@
   --color-ok: #5fbf8c;
   --color-warn: #d9a85c;
   --color-danger: #d9706a;
+
+  /* OS control center (src/os) - a self-contained neon/glassmorphism theme layered on
+     top of the app's normal muted palette above. Scoped to .os-shell so the rest of the
+     app (Chat, Projekte, Einstellungen, ...) is untouched. */
+  --color-os-bg: #05070c;
+  --color-os-panel: #0b0f18;
+  --color-neon-blue: #35c8ff;
+  --color-neon-blue-soft: #35c8ff22;
+  --color-neon-cyan: #4ff0d8;
+  --color-neon-violet: #8b7dff;
+  --color-neon-amber: #ffb547;
+  --color-neon-red: #ff5c72;
 }
 
 :root {
