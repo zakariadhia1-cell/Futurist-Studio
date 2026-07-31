@@ -6,7 +6,7 @@ import httpx
 from app.core import audit
 from app.core.config import get_settings
 from app.orchestrator.tool_registry import Tool, ToolContext, register
-from app.orchestrator.tools.ssrf_guard import is_safe_url
+from app.orchestrator.tools.ssrf_guard import UnsafeUrlError, pinned_request
 
 _MAX_RESPONSE_CHARS = 4_000
 
@@ -69,8 +69,6 @@ async def _call_api(arguments: dict, ctx: ToolContext) -> str:
     method = str(arguments.get("method", "GET")).upper()
     if method not in ("GET", "POST", "PUT", "PATCH", "DELETE"):
         return f"Unbekannte HTTP-Methode: {method}"
-    if not is_safe_url(url):
-        return "URL abgelehnt: nur oeffentliche http(s)-Adressen sind erlaubt (keine internen/privaten Ziele)."
 
     body = arguments.get("body")
     headers = arguments.get("headers") or {}
@@ -79,13 +77,16 @@ async def _call_api(arguments: dict, ctx: ToolContext) -> str:
 
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
-            resp = await client.request(
+            resp = await pinned_request(
+                client,
                 method,
                 url,
                 json=body if isinstance(body, (dict, list)) else None,
                 content=body if isinstance(body, str) else None,
                 headers=headers,
             )
+    except UnsafeUrlError:
+        return "URL abgelehnt: nur oeffentliche http(s)-Adressen sind erlaubt (keine internen/privaten Ziele)."
     except Exception as exc:
         return f"API-Aufruf fehlgeschlagen: {exc}"
 
