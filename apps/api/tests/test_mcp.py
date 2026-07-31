@@ -153,6 +153,31 @@ async def test_server_env_is_encrypted_at_rest(client, db_session, monkeypatch):
         crypto._get_fernet.cache_clear()
 
 
+async def test_sse_server_with_private_target_is_rejected(client, db_session):
+    """F6 (docs/FIX_PLAN.md, S6 in docs/AUDIT_REPORT.md): the sse transport connects
+    directly with no SSRF guard of its own - a server pointed at an internal/private
+    URL must be rejected before mcp.client.sse.sse_client() ever tries to connect."""
+    user_id = await _get_user_id(client)
+    ctx = ToolContext(db=db_session, user_id=user_id)
+
+    from app.models.mcp_server import McpServer
+
+    db_session.add(
+        McpServer(
+            user_id=user_id,
+            name="intern",
+            transport="sse",
+            url="http://169.254.169.254/latest/meta-data/",
+            env={},
+            enabled=True,
+        )
+    )
+    await db_session.commit()
+
+    result = await execute_tool("list_mcp_tools", {"server_name": "intern"}, ctx)
+    assert "abgelehnt" in result
+
+
 async def test_list_mcp_servers_tool_reports_none_configured(client, db_session):
     user_id = await _get_user_id(client)
     ctx = ToolContext(db=db_session, user_id=user_id)

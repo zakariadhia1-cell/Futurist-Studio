@@ -16,6 +16,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from app.core import crypto
 from app.models.mcp_server import McpServer
+from app.orchestrator.tools.ssrf_guard import is_safe_url
 
 _TIMEOUT_SECONDS = 20.0
 
@@ -30,6 +31,14 @@ async def _open_session(server: McpServer, stack: AsyncExitStack) -> ClientSessi
     elif server.transport == "sse":
         if not server.url:
             raise ValueError("Server hat keine 'url' konfiguriert.")
+        # F6 (docs/FIX_PLAN.md, S6 in docs/AUDIT_REPORT.md): sse_client() connects
+        # directly with no SSRF guard of its own - unlike read_page/call_api (F4/F7),
+        # it isn't built on httpx, so there's no pinned_request() equivalent to hook
+        # into here. is_safe_url() is a resolve-then-decide pre-check (same residual
+        # DNS-rebinding TOCTOU caveat as F5's browser guard), which is what the fix
+        # plan calls for at this call site.
+        if not is_safe_url(server.url):
+            raise ValueError("MCP-Server-URL abgelehnt: nur oeffentliche http(s)-Adressen sind erlaubt.")
         read_stream, write_stream = await stack.enter_async_context(sse_client(server.url))
     else:
         raise ValueError(f"Unbekannter Transport: {server.transport}")
