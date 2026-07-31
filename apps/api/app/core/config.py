@@ -2,9 +2,17 @@
 import os
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _API_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# The literal default below - kept for local dev/test convenience, where an unset
+# JWT_SECRET_KEY should still let the app boot. _enforce_production_secrets() below
+# refuses to start with this value (or anything shorter than _MIN_SECRET_LENGTH) once
+# ENV=production - see F8 in docs/FIX_PLAN.md.
+_INSECURE_JWT_DEFAULT = "change-me-in-.env"
+_MIN_SECRET_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -22,7 +30,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # --- Auth / JWT ---
-    JWT_SECRET_KEY: str = "change-me-in-.env"
+    JWT_SECRET_KEY: str = _INSECURE_JWT_DEFAULT
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
@@ -80,6 +88,31 @@ class Settings(BaseSettings):
     # --- Observability (Phase 9) ---
     # Genuinely optional: unset, the app just logs structured JSON to stdout.
     SENTRY_DSN: str = ""
+
+    @model_validator(mode="after")
+    def _enforce_production_secrets(self) -> "Settings":
+        """Fail loudly at startup instead of quietly running with forgeable auth
+        tokens in production (F8 in docs/FIX_PLAN.md - S8 in docs/AUDIT_REPORT.md).
+        Dev/test are unaffected: this only fires when ENV=production, so the
+        convenience default above still works locally."""
+        if self.ENV != "production":
+            return self
+
+        problems: list[str] = []
+        if (
+            not self.JWT_SECRET_KEY
+            or self.JWT_SECRET_KEY == _INSECURE_JWT_DEFAULT
+            or len(self.JWT_SECRET_KEY) < _MIN_SECRET_LENGTH
+        ):
+            problems.append(
+                f"JWT_SECRET_KEY fehlt, ist der unsichere Platzhalter, oder kuerzer als "
+                f"{_MIN_SECRET_LENGTH} Zeichen. Erzeugen mit: openssl rand -hex 32"
+            )
+        if problems:
+            raise RuntimeError(
+                "Unsichere Konfiguration fuer ENV=production - Start abgebrochen:\n- " + "\n- ".join(problems)
+            )
+        return self
 
 
 @lru_cache
