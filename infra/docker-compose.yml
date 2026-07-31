@@ -1,0 +1,89 @@
+name: futurist-os
+
+services:
+  postgres:
+    # pgvector/pgvector, not plain postgres - Phase 2's knowledge base needs the vector
+    # extension, which vanilla postgres images don't ship.
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-futurist}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-futurist}
+      POSTGRES_DB: ${POSTGRES_DB:-futurist_os}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-futurist}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../apps/api
+    restart: unless-stopped
+    env_file:
+      - ../apps/api/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-futurist}:${POSTGRES_PASSWORD:-futurist}@postgres:5432/${POSTGRES_DB:-futurist_os}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../apps/api:/app
+
+  web:
+    build:
+      context: ../apps/web
+    restart: unless-stopped
+    environment:
+      VITE_API_PROXY_TARGET: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../apps/web:/app
+      - web_node_modules:/app/node_modules
+
+  n8n:
+    # Self-hosted, per the "self-hosting first" principle (see docs/architecture). Set
+    # N8N_BASE_URL=http://n8n:5678 and N8N_API_KEY (generate one in the n8n UI under
+    # Settings > API) in apps/api/.env for the Automation Agent's tools to reach it.
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    ports:
+      - "5678:5678"
+
+volumes:
+  postgres_data:
+  redis_data:
+  web_node_modules:
+  n8n_data:

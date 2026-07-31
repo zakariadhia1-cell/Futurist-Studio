@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jarvis</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="stage">
+    <div class="orb" id="orb">
+      <div class="orb-core"></div>
+      <div class="orb-ring"></div>
+      <div class="orb-ring ring-2"></div>
+    </div>
+
+    <p class="status" id="status">Bereit.</p>
+    <p class="transcript" id="transcript"></p>
+
+    <div class="controls">
+      <button id="micBtn" class="btn btn-primary" title="Sprechen (oder Leertaste halten)">🎤 Sprechen</button>
+      <button id="activateBtn" class="btn" title="Jarvis activate">⚡ Aktivieren</button>
+    </div>
+  </main>
+
+  <audio id="player" hidden></audio>
+  <script src="app.js"></script>
+</body>
+</html>

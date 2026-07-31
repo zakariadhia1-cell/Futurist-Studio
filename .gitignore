@@ -14,8 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / frontend (apps/web)
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+.vite/
+
+# Developer Agent sandbox workspaces (per-user, generated at runtime)
+apps/api/workspaces/*
+!apps/api/workspaces/.gitkeep
+
+# Files feature storage (per-user, generated at runtime)
+apps/api/storage/*
+!apps/api/storage/.gitkeep
+
+# Backup dumps produced by infra/scripts/backup.sh
+infra/backups/

@@ -1,0 +1,108 @@
+:root {
+  color-scheme: dark;
+  --bg: #05070d;
+  --cyan: #4fd8ff;
+  --cyan-dim: #1c5a73;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #0a0f1c 0%, var(--bg) 70%);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #e8f6ff;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.orb {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orb-core {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #bdf3ff, var(--cyan) 45%, #0b2530 100%);
+  box-shadow: 0 0 40px 6px rgba(79, 216, 255, 0.55);
+  animation: pulse 2.6s ease-in-out infinite;
+}
+
+.orb-ring {
+  position: absolute;
+  border: 1px solid var(--cyan-dim);
+  border-radius: 50%;
+  width: 160px;
+  height: 160px;
+  animation: spin 8s linear infinite;
+}
+
+.ring-2 {
+  width: 210px;
+  height: 210px;
+  border-color: rgba(79, 216, 255, 0.25);
+  animation-duration: 14s;
+  animation-direction: reverse;
+}
+
+.orb.listening .orb-core { animation: pulse 0.9s ease-in-out infinite; box-shadow: 0 0 60px 14px rgba(79, 216, 255, 0.85); }
+.orb.thinking .orb-core { animation: pulse 1.2s ease-in-out infinite; filter: hue-rotate(20deg); }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.status {
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--cyan);
+  min-height: 1.2em;
+}
+
+.transcript {
+  max-width: 32rem;
+  text-align: center;
+  color: #c9dbe6;
+  min-height: 1.5em;
+}
+
+.controls { display: flex; gap: 0.75rem; }
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--cyan-dim);
+  color: var(--cyan);
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn:hover { background: rgba(79, 216, 255, 0.12); }
+
+.btn-primary { border-color: var(--cyan); }
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
