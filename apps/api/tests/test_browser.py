@@ -88,3 +88,15 @@ def test_browser_ws_rejects_other_users_session():
         with pytest.raises(Exception):
             with client.websocket_connect(f"/ws/browser/{session_id}?token={other_token}") as ws:
                 ws.receive_json()
+
+
+def test_non_admin_member_cannot_create_browser_session():
+    """F3 (docs/FIX_PLAN.md, S3 in docs/AUDIT_REPORT.md): only the admin gets a real
+    headless-Chromium session - a self-registered member must not."""
+    with TestClient(app) as client:
+        _register_and_login(client, "browseradmin@futurist.os")  # first user, becomes admin
+        member_token = _register_and_login(client, "browsermember@futurist.os")
+        resp = client.post(
+            "/api/v1/browser/sessions", headers={"Authorization": f"Bearer {member_token}"}
+        )
+        assert resp.status_code == 403

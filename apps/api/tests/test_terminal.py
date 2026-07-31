@@ -24,6 +24,41 @@ async def test_create_list_close_terminal_session(client):
     assert session_id not in listed_after.json()["sessions"]
 
 
+@pytest.mark.asyncio
+async def test_terminal_session_creation_is_rate_limited(client):
+    """F3 (docs/FIX_PLAN.md, S3 in docs/AUDIT_REPORT.md): even the admin can't spin up
+    unlimited real PTY sessions - the audit specifically called out zero rate limiting
+    on this endpoint as a resource-exhaustion vector."""
+    token = await register_and_login(client)  # first user, becomes admin
+    headers = {"Authorization": f"Bearer {token}"}
+
+    session_ids = []
+    last_status = None
+    try:
+        for _ in range(21):
+            resp = await client.post("/api/v1/terminal/sessions", headers=headers)
+            last_status = resp.status_code
+            if resp.status_code == 201:
+                session_ids.append(resp.json()["id"])
+    finally:
+        for session_id in session_ids:
+            await client.delete(f"/api/v1/terminal/sessions/{session_id}", headers=headers)
+
+    assert last_status == 429
+
+
+@pytest.mark.asyncio
+async def test_non_admin_member_cannot_create_terminal_session(client):
+    """F3 (docs/FIX_PLAN.md, S3 in docs/AUDIT_REPORT.md): only the admin gets a real
+    shell - a self-registered member must not."""
+    await register_and_login(client)  # first user in this fresh DB, becomes admin
+    member_token = await register_and_login(client, email="term-member@futurist.os")
+    resp = await client.post(
+        "/api/v1/terminal/sessions", headers={"Authorization": f"Bearer {member_token}"}
+    )
+    assert resp.status_code == 403
+
+
 def _register_and_login_sync(client: TestClient, email: str) -> str:
     client.post(
         "/api/v1/auth/register",

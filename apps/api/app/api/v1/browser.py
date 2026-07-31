@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin
+from app.core.rate_limit import rate_limiter
 from app.live import browser_manager
 from app.models.user import User
 from app.schemas.browser import BrowserSessionList, BrowserSessionRead
@@ -13,8 +14,17 @@ async def list_sessions(user: User = Depends(get_current_user)) -> BrowserSessio
     return BrowserSessionList(sessions=browser_manager.list_sessions(user.id))
 
 
-@router.post("/sessions", response_model=BrowserSessionRead, status_code=status.HTTP_201_CREATED)
-async def create_session(user: User = Depends(get_current_user)) -> BrowserSessionRead:
+@router.post(
+    "/sessions",
+    response_model=BrowserSessionRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limiter("browser_session", limit=20, window_seconds=3600))],
+)
+async def create_session(user: User = Depends(require_admin)) -> BrowserSessionRead:
+    # F3 (docs/FIX_PLAN.md, S3 in docs/AUDIT_REPORT.md): a real headless-Chromium
+    # session - admin-only for the same reason as terminal.py's create_session, and
+    # rate-limited on top since a real browser process is expensive to spin up
+    # repeatedly even for a trusted account.
     session = await browser_manager.create_session(user.id)
     return BrowserSessionRead(id=session.id)
 
