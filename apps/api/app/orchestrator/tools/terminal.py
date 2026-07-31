@@ -1,7 +1,7 @@
 import asyncio
 
 from app.orchestrator.tool_registry import Tool, ToolContext, register
-from app.orchestrator.tools.sandbox import user_workspace_dir
+from app.orchestrator.tools.sandbox import safe_shell_env, user_workspace_dir
 
 _TIMEOUT_SECONDS = 20
 _MAX_OUTPUT_CHARS = 8_000
@@ -18,6 +18,7 @@ async def _run_terminal_command(arguments: dict, ctx: ToolContext) -> str:
         cwd=workdir,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
+        env=safe_shell_env(ctx.user_id),
     )
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=_TIMEOUT_SECONDS)

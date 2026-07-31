@@ -16,7 +16,7 @@ import termios
 import uuid
 from dataclasses import dataclass, field
 
-from app.orchestrator.tools.sandbox import user_workspace_dir
+from app.orchestrator.tools.sandbox import safe_shell_env, user_workspace_dir
 
 
 @dataclass
@@ -41,6 +41,8 @@ async def create_session(user_id: uuid.UUID) -> TerminalSession:
     master_fd, slave_fd = pty.openpty()
     _set_winsize(master_fd)
 
+    env = safe_shell_env(user_id)
+    env["TERM"] = "xterm-256color"
     process = await asyncio.create_subprocess_exec(
         "/bin/bash",
         stdin=slave_fd,
@@ -48,7 +50,7 @@ async def create_session(user_id: uuid.UUID) -> TerminalSession:
         stderr=slave_fd,
         cwd=workdir,
         start_new_session=True,
-        env={**os.environ, "TERM": "xterm-256color"},
+        env=env,
     )
     os.close(slave_fd)  # the child holds its own dup'd copy; the parent doesn't need this one
 

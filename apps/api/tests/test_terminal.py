@@ -55,6 +55,33 @@ def test_terminal_ws_echo_roundtrip():
             assert "HALLO_FUTURIST" in output
 
 
+def test_terminal_ws_does_not_leak_process_environment(monkeypatch):
+    """F2 (docs/FIX_PLAN.md, S2 in docs/AUDIT_REPORT.md): the PTY shell must not inherit
+    the API process's environment - previously {**os.environ, "TERM": ...}."""
+    monkeypatch.setenv("SUPER_SECRET_TEST_VALUE", "do-not-leak-this-9f3a2b")
+    with TestClient(app) as client:
+        token = _register_and_login_sync(client, "termleak@futurist.os")
+        headers = {"Authorization": f"Bearer {token}"}
+
+        created = client.post("/api/v1/terminal/sessions", headers=headers)
+        session_id = created.json()["id"]
+
+        with client.websocket_connect(f"/ws/terminal/{session_id}?token={token}") as ws:
+            ws.send_json({"type": "input", "data": "env; echo ENV_DUMP_DONE\n"})
+
+            output = ""
+            for _ in range(50):
+                msg = ws.receive_json()
+                if msg["type"] == "output":
+                    output += msg["data"]
+                    if "ENV_DUMP_DONE" in output:
+                        break
+
+            assert "ENV_DUMP_DONE" in output
+            assert "do-not-leak-this-9f3a2b" not in output
+            assert "SUPER_SECRET_TEST_VALUE" not in output
+
+
 def test_terminal_ws_rejects_other_users_session():
     with TestClient(app) as client:
         owner_token = _register_and_login_sync(client, "termowner@futurist.os")
